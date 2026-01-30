@@ -8,7 +8,7 @@ namespace MotorController;
 /// assignments for pulse, direction, limit switches, and optional enable functionality. It also includes motor-specific
 /// settings such as steps per revolution, lead screw pitch, and acceleration rate. These settings are typically used to
 /// initialize and configure motor control logic in embedded or automation applications.</remarks>
-public class Settings
+public class StepperMotorSettings
 {
     /// <summary>
     /// Gets or sets the GPIO pin number used to output the pulse signal.

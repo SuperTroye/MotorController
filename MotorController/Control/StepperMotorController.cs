@@ -26,7 +26,7 @@ public class StepperMotorController : IDisposable
     private bool _maxLimitTriggered;
     private bool _disposed;
 
-    private MotorController.Settings _settings;
+    private MotorController.StepperMotorSettings _settings;
 
     /// <summary>
     /// Gets the current position in inches
@@ -54,7 +54,7 @@ public class StepperMotorController : IDisposable
     /// <param name="enablePin">Optional GPIO pin number for enable signal</param>
     public StepperMotorController(
         IGpioController gpioController,
-        MotorController.Settings settings)
+        MotorController.StepperMotorSettings settings)
     {
         _settings = settings;
         _gpioController = gpioController;

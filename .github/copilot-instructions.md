@@ -1,7 +1,7 @@
 Stepper Motor Controller
 Create a c# class to control a stepper motor driver.
 
-Use System.Device.Gpio to control pins on a Raspberry Pi.
+Use System.Device.Gpio to control pins on a Raspberry Pi. 
 
 Create an interface called IGpioController to abstract GPIO operations, and to make unit testing easier. It should implement IDisposable and have methods for opening pins, writing to pins, reading from pins, and closing pins.
 
@@ -9,19 +9,31 @@ Create a wrapper class called GpioControllerWrapper that implements IGpioControl
 
 The pins are for Pulse, Direction, and an optional Enable pin.
 
+
+Create a settings class called StepperMotorSettings with the following properties:
+- PulsePin (int)
+- DirectionPin (int)
+- EnablePin (int, optional)
+- StepsPerRevolution (int, default 400)
+- LeadScrewThreadsPerInch (double, default 5)
+- Acceleration (int, default 7000)
+- MinLimitSwitchPin (int)
+- MaxLimitSwitchPin (int)
+- AccelerationStepsPerSecondSquared (double)
+
+This class will be used to pass configuration to the StepperMotorController.
+
 There will be 2 limit switches to constrain maximum and minimum travel.
 
-Include an acceleration and deceleration parameter (in steps per second squared), which uses trapezoidal profile. The default value is 7000 steps per second squared if no value is given.
+Use the acceleration/deceleration property (in steps per second squared) to set motor acceleration. The default value is 7000 steps per second squared if no value is given.
 
 The method to control motion uses RPM for stepper motor speed.
-
-Include a parameter for setting the number of steps per revolution.
 
 Use Stopwatch class to determine time between steps.
 
 Create a method to run the motor until a limit switch is detected.
 
-The stepper motor will turn a lead screw with 5 threads per inch. Include a "LeadScrewThreadsPerInch" property to set this value and a method to Move, with a parameter of inches. This will divide the desired length by the threads per inch for the distance.
+The stepper motor will turn a lead screw with 5 threads per inch. Use the "LeadScrewThreadsPerInch" property to set this value and a method to Move, with a parameter of inches. This will divide the desired length by the threads per inch for the distance.
 
 Create a method to stop the motor, incorporating deceleration.
 
@@ -51,9 +63,9 @@ Create comprehensive unit tests for the StepperMotorController class. Use NSubst
 GUI
 Create a small c# GTK application using GirCore.Gtk-4.0 with a single window.
 
-Make the window size fit a Raspberry Pi 5 inch touchscreen display.
+Make the window size fit a Raspberry Pi 5 inch touchscreen  800x480 display.
 
-It has a button to start the motor, 2 boxes and 2 circles to show the minimum and maximum limit switch status.
+It has a button to start the motor, a button to Home the motor, 2 boxes and 2 circles to show the minimum and maximum limit switch status.
 
 Box 1 shows motor speed.
 
