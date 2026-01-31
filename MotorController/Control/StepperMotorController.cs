@@ -13,11 +13,11 @@ public enum MotorDirection
 public class StepperMotorController : IDisposable
 {
     private readonly IGpioController _gpioController;
-    private readonly StepperMotorSettings _settings;
+    private readonly ControllerConfig _settings;
     
     public StepperMotorController(
         IGpioController gpioController,
-        StepperMotorSettings settings)
+        ControllerConfig settings)
     {
         _settings = settings;
         _gpioController = gpioController;

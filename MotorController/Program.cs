@@ -7,7 +7,7 @@ IGpioController gpioController = OperatingSystem.IsWindows() ?
     new FakeGpioController() :
     new GpioControllerWrapper(new GpioController());
 
-StepperMotorController stepperMotor = new StepperMotorController(gpioController, new StepperMotorSettings());
+StepperMotorController stepperMotor = new StepperMotorController(gpioController, new ControllerConfig());
 
 var application = Application.New("com.motorcontroller.app", Gio.ApplicationFlags.FlagsNone);
 application.OnActivate += (sender, args) =>

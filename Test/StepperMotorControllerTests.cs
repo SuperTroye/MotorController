@@ -8,12 +8,12 @@ namespace Test;
 public class StepperMotorControllerTests
 {
     private readonly IGpioController _mockGpioController;
-    private readonly StepperMotorSettings _defaultSettings;
+    private readonly ControllerConfig _defaultSettings;
 
     public StepperMotorControllerTests()
     {
         _mockGpioController = Substitute.For<IGpioController>();
-        _defaultSettings = new StepperMotorSettings
+        _defaultSettings = new ControllerConfig
         {
             PulsePin = 1,
             DirectionPin = 2,

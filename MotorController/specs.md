@@ -9,7 +9,7 @@ Create a wrapper class called GpioControllerWrapper that implements IGpioControl
 
 The pins are for Pulse, Direction, and an optional Enable pin.
 
-Create a settings class called StepperMotorSettings with the following properties:
+Create a settings class called ControllerConfig with the following properties:
 - PulsePin (int)
 - DirectionPin (int)
 - EnablePin (int, optional)
@@ -20,7 +20,7 @@ Create a settings class called StepperMotorSettings with the following propertie
 - MaxLimitSwitchPin (int)
 - AccelerationStepsPerSecondSquared (double)
 
-The StepperMotorSettings class will be used to pass configuration to the StepperMotorController.
+The ControllerConfig class will be used to pass configuration to the StepperMotorController class.
 
 There will be 2 limit switches to constrain maximum and minimum travel.
 
@@ -28,7 +28,7 @@ The StepperMotorController class should incorporate acceleration and deceleratio
 
 The Acceleration property (in steps per second squared) will be used to set motor acceleration. The default value is 7000 steps per second squared if no value is given.
 
-The method to control motion uses RPM for stepper motor speed.
+The methods to control motion uses RPM for stepper motor speed.
 
 The stepper motor will turn a lead screw with 5 threads per inch. Use the LeadScrewThreadsPerInch property to set this value and a method to Move, with a parameter of inches. This will divide the desired length by the threads per inch for the distance.
 
@@ -42,7 +42,7 @@ Create a method to set the current position in inches to zero.
 
 Create a property for current position in inches which is thread safe and can be read at any time.
 
-Create a boolean property for the limit switches which return true if they are triggered. This will be used by the User Interface.
+Create a boolean property for the limit switches (IsMinLimitSwitchTriggered and IsMaxLimitSwitchTriggered) which return true if they are triggered. This will be used by the User Interface.
 
 Make all methods asynchronous to avoid blocking the main thread. 
 
