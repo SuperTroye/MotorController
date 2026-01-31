@@ -63,13 +63,13 @@ Create comprehensive unit tests for the StepperMotorController class. Use NSubst
 GUI
 Create a small c# GTK application using GirCore.Gtk-4.0 with a single window.
 
-Make the window size fit a Raspberry Pi 5 inch touchscreen  800x480 display.
+Make the window size fit a Raspberry Pi 5 inch touchscreen 800x480 display.
 
 It has a button to start the motor, a button to Home the motor, 2 boxes and 2 circles to show the minimum and maximum limit switch status.
 
 Box 1 shows motor speed.
-
 Box 2 shows the current position.
 
 Add 2 circles at the top of the window to show limit switch status. Green fill color means no limit switch detected and red means the limit switch is detected.
 
+Make sure to build the solution to make sure there are no errors.

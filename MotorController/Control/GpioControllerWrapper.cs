@@ -1,6 +1,6 @@
 using System.Device.Gpio;
 
-namespace Step;
+namespace MotorControllerApp;
 
 public interface IGpioController : IDisposable
 {

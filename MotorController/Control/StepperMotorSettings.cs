@@ -1,5 +1,5 @@
 ﻿
-namespace MotorController;
+namespace MotorControllerApp;
 
 /// <summary>
 /// Provides configuration settings for controlling a stepper motor and its associated hardware pins.

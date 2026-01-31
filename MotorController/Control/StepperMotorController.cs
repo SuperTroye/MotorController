@@ -1,7 +1,7 @@
 using System.Device.Gpio;
 using System.Diagnostics;
 
-namespace Step;
+namespace MotorControllerApp;
 
 /// <summary>
 /// Direction of stepper motor rotation
@@ -26,7 +26,7 @@ public class StepperMotorController : IDisposable
     private bool _maxLimitTriggered;
     private bool _disposed;
 
-    private MotorController.StepperMotorSettings _settings;
+    private StepperMotorSettings _settings;
 
     /// <summary>
     /// Gets the current position in inches
@@ -54,7 +54,7 @@ public class StepperMotorController : IDisposable
     /// <param name="enablePin">Optional GPIO pin number for enable signal</param>
     public StepperMotorController(
         IGpioController gpioController,
-        MotorController.StepperMotorSettings settings)
+        StepperMotorSettings settings)
     {
         _settings = settings;
         _gpioController = gpioController;
@@ -430,10 +430,10 @@ public class StepperMotorController : IDisposable
 
         _disposed = true;
     }
-
-    public bool IsMinLimitSwitchActive =>
+    
+    public bool IsMinLimitSwitchTriggered =>
         _gpioController.Read(_settings.MinLimitSwitchPin) == PinValue.Low;
 
-    public bool IsMaxLimitSwitchActive =>
+    public bool IsMaxLimitSwitchTriggered =>
         _gpioController.Read(_settings.MaxLimitSwitchPin) == PinValue.Low;
 }
