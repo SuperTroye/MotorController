@@ -10,14 +10,14 @@ Create a wrapper class called GpioControllerWrapper that implements IGpioControl
 The pins are for Pulse, Direction, and an optional Enable pin.
 
 Create a settings class called ControllerConfig with the following properties:
-- PulsePin (int)
-- DirectionPin (int)
+- PulsePin (int, default 21)
+- DirectionPin (int, default 20)
 - EnablePin (int, optional)
 - StepsPerRevolution (int, default 400)
 - LeadScrewThreadsPerInch (double, default 5)
 - Acceleration (int, default 7000)
-- MinLimitSwitchPin (int)
-- MaxLimitSwitchPin (int)
+- MinLimitSwitchPin (int, default 23)
+- MaxLimitSwitchPin (int, default 24)
 - AccelerationStepsPerSecondSquared (double)
 
 The ControllerConfig class will be used to pass configuration to the StepperMotorController class.

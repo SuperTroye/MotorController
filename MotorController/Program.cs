@@ -7,8 +7,18 @@ IGpioController gpioController = OperatingSystem.IsWindows() ?
     new FakeGpioController() :
     new GpioControllerWrapper(new GpioController());
 
-StepperMotorController stepperMotor = new StepperMotorController(gpioController, new ControllerConfig());
+StepperMotorController ctrl = new StepperMotorController(gpioController, new ControllerConfig());
 
+
+await ctrl.HomeAsync();
+
+await ctrl.MoveInchesAsync(2, 60);
+
+await ctrl.StopAsync();
+
+
+
+/*
 var application = Application.New("com.motorcontroller.app", Gio.ApplicationFlags.FlagsNone);
 application.OnActivate += (sender, args) =>
 {
@@ -21,5 +31,5 @@ application.OnActivate += (sender, args) =>
 };
 
 return application.RunWithSynchronizationContext(null);
-
+*/
 
