@@ -21,7 +21,7 @@ public class StepperMotorSettings
     public int DirectionPin { get; set; } = 20;
 
     /// <summary>
-    /// Gets or sets the GPIO pin number used to detect the minimum limit switch position.
+    /// Gets or sets the GPIO pin number used to detect the minimum limit switch.
     /// </summary>
     public int MinLimitSwitchPin { get; set; } = 23;
 
@@ -46,7 +46,7 @@ public class StepperMotorSettings
     public double LeadScrewThreadsPerInch { get; set; } = 5.0;
 
     /// <summary>
-    /// Gets or sets the acceleration/deceleration rate in steps per second squared
+    /// Gets or sets the acceleration/deceleration rate in steps per second squared.
     /// </summary>
     public double AccelerationStepsPerSecondSquared { get; set; } = 7000;
 }
