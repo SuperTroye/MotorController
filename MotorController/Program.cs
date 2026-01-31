@@ -114,6 +114,7 @@ application.OnActivate += (sender, args) =>
     {
         // TODO: Home motor logic
         positionLabel.SetText("0.000 in");
+        await stepperMotor.HomeAsync();
     };
     
     buttonBox.Append(startButton);
