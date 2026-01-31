@@ -20,19 +20,19 @@ Create a settings class called StepperMotorSettings with the following propertie
 - MaxLimitSwitchPin (int)
 - AccelerationStepsPerSecondSquared (double)
 
-This class will be used to pass configuration to the StepperMotorController.
+The StepperMotorSettings class will be used to pass configuration to the StepperMotorController.
 
 There will be 2 limit switches to constrain maximum and minimum travel.
 
-Use the acceleration/deceleration property (in steps per second squared) to set motor acceleration. The default value is 7000 steps per second squared if no value is given.
+The StepperMotorController class should incorporate acceleration and deceleration when starting and stopping the motor. Use a linear acceleration profile.
+
+The Acceleration property (in steps per second squared) will be used to set motor acceleration. The default value is 7000 steps per second squared if no value is given.
 
 The method to control motion uses RPM for stepper motor speed.
 
-Use Stopwatch class to determine time between steps.
+The stepper motor will turn a lead screw with 5 threads per inch. Use the LeadScrewThreadsPerInch property to set this value and a method to Move, with a parameter of inches. This will divide the desired length by the threads per inch for the distance.
 
 Create a method to run the motor until a limit switch is detected.
-
-The stepper motor will turn a lead screw with 5 threads per inch. Use the LeadScrewThreadsPerInch property to set this value and a method to Move, with a parameter of inches. This will divide the desired length by the threads per inch for the distance.
 
 Create a method to stop the motor, incorporating deceleration.
 
@@ -42,9 +42,11 @@ Create a method to set the current position in inches to zero.
 
 Create a property for current position in inches which is thread safe and can be read at any time.
 
-Create a boolean property for the limit switches which return if they are triggered. This will be used by the User Interface.
+Create a boolean property for the limit switches which return true if they are triggered. This will be used by the User Interface.
 
-Make all methods asynchronous to avoid blocking the main thread. The Stop method should be able to be called from another thread while the motor is running, so have it set a CancellationToken to stop.
+Make all methods asynchronous to avoid blocking the main thread. 
+
+The Stop method should be able to be called from another thread while the motor is running, so have it set a CancellationToken to stop.
 
 The method to control motion should throw exceptions for invalid parameters, such as moving beyond limit switches or invalid RPM values.
 
