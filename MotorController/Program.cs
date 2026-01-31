@@ -3,8 +3,8 @@ using MotorControllerApp;
 using System.Device.Gpio;
 
 
-//IGpioController gpioController = new GpioControllerWrapper(new GpioController());
-IGpioController gpioController = new FakeGpioController();
+IGpioController gpioController = new GpioControllerWrapper(new GpioController());
+//IGpioController gpioController = new FakeGpioController();
 
 StepperMotorController stepperMotor = new StepperMotorController(gpioController, new StepperMotorSettings());
 
