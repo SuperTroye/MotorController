@@ -7,12 +7,11 @@ IGpioController gpioController = OperatingSystem.IsWindows() ?
     new FakeGpioController() :
     new GpioControllerWrapper(new GpioController());
 
-StepperMotorController ctrl = new StepperMotorController(gpioController, new ControllerConfig());
+using StepperMotorController ctrl = new StepperMotorController(gpioController, new ControllerConfig());
 
+//await ctrl.HomeAsync();
 
-await ctrl.HomeAsync();
-
-await ctrl.MoveInchesAsync(2, 60);
+await ctrl.MoveInchesAsync(1, 80);
 
 await ctrl.StopAsync();
 

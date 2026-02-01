@@ -16,8 +16,8 @@ Create a settings class called ControllerConfig with the following properties:
 - StepsPerRevolution (int, default 400)
 - LeadScrewThreadsPerInch (double, default 5)
 - Acceleration (int, default 7000)
-- MinLimitSwitchPin (int, default 23)
-- MaxLimitSwitchPin (int, default 24)
+- MinLimitSwitchPin (int, default 24)
+- MaxLimitSwitchPin (int, default 23)
 - AccelerationStepsPerSecondSquared (double)
 
 The ControllerConfig class will be used to pass configuration to the StepperMotorController class.
