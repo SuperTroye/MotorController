@@ -23,7 +23,7 @@ The ControllerConfig class will be used to pass configuration to the StepperMoto
 
 There will be 2 limit switches to constrain maximum and minimum travel.
 
-The StepperMotorController class should incorporate acceleration and deceleration when starting and stopping the motor. Use a linear acceleration profile.
+The StepperMotorController class should incorporate acceleration and deceleration when starting and stopping the motor. Use the David Austin stepper motor algorithm, which provides smooth linear acceleration profile.
 
 The Acceleration property (in steps per second squared) will be used to set motor acceleration.
 

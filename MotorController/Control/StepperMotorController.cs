@@ -1,4 +1,4 @@
-using System.Device.Gpio;
+﻿using System.Device.Gpio;
 using System.Diagnostics;
 
 namespace MotorControllerApp;
@@ -246,37 +246,55 @@ public class StepperMotorController : IDisposable
     private async Task ExecuteMotionAsync(int steps, double rpm, CancellationToken cancellationToken)
     {
         var maxStepsPerSecond = (rpm * _config.StepsPerRevolution) / 60.0;
+        var targetDelayMicroseconds = 1_000_000.0 / maxStepsPerSecond;
+        
+        // Initial delay using David Austin algorithm: c0 = 0.676 * sqrt(2/α) * 10^6
+        var initialDelayMicroseconds = 0.676 * Math.Sqrt(2.0 / _config.Acceleration) * 1_000_000.0;
+        
+        // Calculate acceleration steps needed to reach target speed
         var accelerationSteps = (int)((maxStepsPerSecond * maxStepsPerSecond) / (2 * _config.Acceleration));
         var decelerationSteps = accelerationSteps;
+        
+        // Adjust if motion is too short for full acceleration/deceleration
+        if (accelerationSteps + decelerationSteps > steps)
+        {
+            accelerationSteps = steps / 2;
+            decelerationSteps = steps - accelerationSteps;
+        }
 
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stopTokenSource.Token);
 
+        double delayMicroseconds = initialDelayMicroseconds;
+        int accelStep = 0;
+
         for (int step = 0; step < steps && !linkedCts.Token.IsCancellationRequested; step++)
         {
-            double currentSpeed;
-
-            // Acceleration phase
+            // Acceleration phase - David Austin algorithm: cn = cn-1 - (2 * cn-1) / (4n + 1)
             if (step < accelerationSteps)
             {
-                currentSpeed = Math.Sqrt((double)2 * _config.Acceleration * (double)step);
+                if (step > 0)
+                {
+                    delayMicroseconds = delayMicroseconds - (2.0 * delayMicroseconds) / (4.0 * accelStep + 1.0);
+                }
+                accelStep++;
             }
-            // Deceleration phase
+            // Deceleration phase - reverse the acceleration ramp
             else if (step >= steps - decelerationSteps)
             {
-                var stepsRemaining = steps - step;
-                currentSpeed = Math.Sqrt(2 * _config.Acceleration * (double)stepsRemaining);
+                accelStep--;
+                if (accelStep > 0)
+                {
+                    delayMicroseconds = delayMicroseconds + (2.0 * delayMicroseconds) / (4.0 * accelStep + 1.0);
+                }
             }
             // Constant speed phase
             else
             {
-                currentSpeed = maxStepsPerSecond;
+                delayMicroseconds = targetDelayMicroseconds;
             }
 
-            currentSpeed = Math.Max(currentSpeed, 1); // Minimum speed
-
-            //Debug.WriteLine($"Step {step + 1}/{steps}, Speed: {currentSpeed:F2} steps/s");
-
-            var delayMicroseconds = (int)(1_000_000.0 / currentSpeed);
+            // Ensure delay doesn't go below minimum
+            delayMicroseconds = Math.Max(delayMicroseconds, targetDelayMicroseconds);
 
             _gpio.Write(_config.PulsePin, PinValue.High);
             await Task.Delay(TimeSpan.FromMicroseconds(delayMicroseconds / 2), linkedCts.Token);
