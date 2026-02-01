@@ -31,11 +31,9 @@ The methods to control motion uses RPM for stepper motor speed.
 
 The stepper motor will turn a lead screw. Use the LeadScrewThreadsPerInch property to set this value and a method to Move, with a parameter of inches. This will divide the desired length by the threads per inch for the distance.
 
-Create a method to run the motor until a limit switch is detected.
+Create a method to run the motor until a limit switch is detected. If the direction is towards the min limit switch, it should stop when the min limit switch is triggered and set current position to 0, and vice versa for the max limit switch.
 
 Create a method to stop the motor, incorporating deceleration.
-
-Create a method to home the motor to the minimum limit switch. This will set the current position to zero. Do not use deceleration, stop the motor immediately.
 
 Create a method to set the current position in inches to zero.
 

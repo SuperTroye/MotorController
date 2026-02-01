@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="MotorController/MotorController.csproj" />
-  <Project Path="Test/Test.csproj" />
-</Solution>
