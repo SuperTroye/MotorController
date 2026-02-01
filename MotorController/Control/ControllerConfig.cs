@@ -48,7 +48,7 @@ public class ControllerConfig
     /// <summary>
     /// Gets or sets the acceleration/deceleration rate in steps per second squared.
     /// </summary>
-    public double AccelerationStepsPerSecondSquared { get; set; } = 1000;
+    public double Acceleration { get; set; } = 5000;
 }
 
 

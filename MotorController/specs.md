@@ -15,10 +15,9 @@ Create a settings class called ControllerConfig with the following properties:
 - EnablePin (int, optional)
 - StepsPerRevolution (int, default 400)
 - LeadScrewThreadsPerInch (double, default 5)
-- Acceleration (int, default 7000)
+- Acceleration (double, default 5000)
 - MinLimitSwitchPin (int, default 24)
 - MaxLimitSwitchPin (int, default 23)
-- AccelerationStepsPerSecondSquared (double)
 
 The ControllerConfig class will be used to pass configuration to the StepperMotorController class.
 
@@ -26,11 +25,11 @@ There will be 2 limit switches to constrain maximum and minimum travel.
 
 The StepperMotorController class should incorporate acceleration and deceleration when starting and stopping the motor. Use a linear acceleration profile.
 
-The Acceleration property (in steps per second squared) will be used to set motor acceleration. The default value is 7000 steps per second squared if no value is given.
+The Acceleration property (in steps per second squared) will be used to set motor acceleration.
 
 The methods to control motion uses RPM for stepper motor speed.
 
-The stepper motor will turn a lead screw with 5 threads per inch. Use the LeadScrewThreadsPerInch property to set this value and a method to Move, with a parameter of inches. This will divide the desired length by the threads per inch for the distance.
+The stepper motor will turn a lead screw. Use the LeadScrewThreadsPerInch property to set this value and a method to Move, with a parameter of inches. This will divide the desired length by the threads per inch for the distance.
 
 Create a method to run the motor until a limit switch is detected.
 

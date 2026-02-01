@@ -1,4 +1,5 @@
 using System.Device.Gpio;
+using System.Diagnostics;
 
 namespace MotorControllerApp;
 
@@ -104,6 +105,10 @@ public class StepperMotorController : IDisposable
             {
                 _positionLock.Release();
             }
+        }
+        catch (OperationCanceledException)
+        {       
+            // Expected when motion is cancelled via StopAsync or cancellationToken
         }
         finally
         {
@@ -226,10 +231,22 @@ public class StepperMotorController : IDisposable
         }
     }
 
+
+    /// <summary>
+    /// Executes a motion sequence by generating step pulses with acceleration and deceleration profiles at the
+    /// specified speed.
+    /// </summary>
+    /// <remarks>The motion sequence accelerates at the beginning, maintains a constant speed, and then
+    /// decelerates before stopping. The operation can be cancelled at any time via the provided cancellation token or
+    /// an internal stop request. If cancellation is requested, the motion will stop as soon as possible.</remarks>
+    /// <param name="steps">The total number of steps to move. Must be a non-negative integer.</param>
+    /// <param name="rpm">The target speed in revolutions per minute. Must be greater than zero.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the motion operation.</param>
+    /// <returns>A task that represents the asynchronous operation of executing the motion sequence.</returns>
     private async Task ExecuteMotionAsync(int steps, double rpm, CancellationToken cancellationToken)
     {
         var maxStepsPerSecond = (rpm * _config.StepsPerRevolution) / 60.0;
-        var accelerationSteps = (int)((maxStepsPerSecond * maxStepsPerSecond) / (2 * _config.AccelerationStepsPerSecondSquared));
+        var accelerationSteps = (int)((maxStepsPerSecond * maxStepsPerSecond) / (2 * _config.Acceleration));
         var decelerationSteps = accelerationSteps;
 
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stopTokenSource.Token);
@@ -241,13 +258,13 @@ public class StepperMotorController : IDisposable
             // Acceleration phase
             if (step < accelerationSteps)
             {
-                currentSpeed = Math.Sqrt(2 * _config.AccelerationStepsPerSecondSquared * step);
+                currentSpeed = Math.Sqrt((double)2 * _config.Acceleration * (double)step);
             }
             // Deceleration phase
             else if (step >= steps - decelerationSteps)
             {
                 var stepsRemaining = steps - step;
-                currentSpeed = Math.Sqrt(2 * _config.AccelerationStepsPerSecondSquared * stepsRemaining);
+                currentSpeed = Math.Sqrt(2 * _config.Acceleration * (double)stepsRemaining);
             }
             // Constant speed phase
             else
@@ -256,6 +273,9 @@ public class StepperMotorController : IDisposable
             }
 
             currentSpeed = Math.Max(currentSpeed, 1); // Minimum speed
+
+            //Debug.WriteLine($"Step {step + 1}/{steps}, Speed: {currentSpeed:F2} steps/s");
+
             var delayMicroseconds = (int)(1_000_000.0 / currentSpeed);
 
             _gpio.Write(_config.PulsePin, PinValue.High);
