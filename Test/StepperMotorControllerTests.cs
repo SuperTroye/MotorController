@@ -20,7 +20,7 @@ public class StepperMotorControllerTests : IDisposable
             DirectionPin = 20,
             MinLimitSwitchPin = 24,
             MaxLimitSwitchPin = 23,
-            StepsPerRevolution = 400,
+            StepsPerRevolution = StepsPerRevolution.SPR_400,
             LeadScrewThreadsPerInch = 5.0,
             Acceleration = 5000.0
         };
@@ -224,7 +224,7 @@ public class StepperMotorControllerTests : IDisposable
             EnablePin = 16,
             MinLimitSwitchPin = 24,
             MaxLimitSwitchPin = 23,
-            StepsPerRevolution = 400,
+            StepsPerRevolution = StepsPerRevolution.SPR_400,
             LeadScrewThreadsPerInch = 5.0,
             Acceleration = 5000.0
         };
@@ -262,7 +262,7 @@ public class StepperMotorControllerTests : IDisposable
             DirectionPin = 20,
             MinLimitSwitchPin = 24,
             MaxLimitSwitchPin = 23,
-            StepsPerRevolution = 10, // Small for testing
+            StepsPerRevolution = StepsPerRevolution.SPR_400,
             LeadScrewThreadsPerInch = 1.0,
             Acceleration = 50000.0 // High acceleration for quick test
         };
@@ -442,7 +442,7 @@ public class StepperMotorControllerTests : IDisposable
             DirectionPin = 20,
             MinLimitSwitchPin = 24,
             MaxLimitSwitchPin = 23,
-            StepsPerRevolution = 10,
+            StepsPerRevolution = StepsPerRevolution.SPR_400,
             LeadScrewThreadsPerInch = 1.0,
             Acceleration = 50000.0
         };
@@ -506,7 +506,7 @@ public class StepperMotorControllerTests : IDisposable
             DirectionPin = 20,
             MinLimitSwitchPin = 24,
             MaxLimitSwitchPin = 23,
-            StepsPerRevolution = 10,
+            StepsPerRevolution = StepsPerRevolution.SPR_400,
             LeadScrewThreadsPerInch = 1.0,
             Acceleration = 50000.0
         };
@@ -546,7 +546,7 @@ public class StepperMotorControllerTests : IDisposable
             DirectionPin = 20,
             MinLimitSwitchPin = 24,
             MaxLimitSwitchPin = 23,
-            StepsPerRevolution = 400,
+            StepsPerRevolution = StepsPerRevolution.SPR_400,
             LeadScrewThreadsPerInch = 5.0,
             Acceleration = 5000.0 // steps/sec^2
         };
@@ -555,13 +555,13 @@ public class StepperMotorControllerTests : IDisposable
         using var controller = new StepperMotorController(mockGpio, testConfig);
 
         double rpm = 60; // 60 RPM
-        double maxStepsPerSecond = (rpm * testConfig.StepsPerRevolution) / 60.0; // 400 steps/sec
+        double maxStepsPerSecond = (rpm * (int)testConfig.StepsPerRevolution) / 60.0; // 400 steps/sec
         int expectedAccelSteps = (int)((maxStepsPerSecond * maxStepsPerSecond) / (2 * testConfig.Acceleration)); // (400*400)/(2*5000) = 16 steps
 
         int totalSteps = 100;
 
         // Act
-        await controller.MoveInchesAsync(totalSteps / (testConfig.StepsPerRevolution * testConfig.LeadScrewThreadsPerInch), rpm);
+        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.StepsPerRevolution * testConfig.LeadScrewThreadsPerInch), rpm);
 
         // Assert - Verify we pulsed the correct total number of steps
         mockGpio.Received(totalSteps).Write(testConfig.PulsePin, PinValue.High);
@@ -581,7 +581,7 @@ public class StepperMotorControllerTests : IDisposable
             DirectionPin = 20,
             MinLimitSwitchPin = 24,
             MaxLimitSwitchPin = 23,
-            StepsPerRevolution = 400,
+            StepsPerRevolution = StepsPerRevolution.SPR_400,
             LeadScrewThreadsPerInch = 5.0,
             Acceleration = 5000.0
         };
@@ -610,7 +610,7 @@ public class StepperMotorControllerTests : IDisposable
             DirectionPin = 20,
             MinLimitSwitchPin = 24,
             MaxLimitSwitchPin = 23,
-            StepsPerRevolution = 400,
+            StepsPerRevolution = StepsPerRevolution.SPR_400,
             LeadScrewThreadsPerInch = 5.0,
             Acceleration = 5000.0
         };
@@ -638,7 +638,7 @@ public class StepperMotorControllerTests : IDisposable
             DirectionPin = 20,
             MinLimitSwitchPin = 24,
             MaxLimitSwitchPin = 23,
-            StepsPerRevolution = 400,
+            StepsPerRevolution = StepsPerRevolution.SPR_400,
             LeadScrewThreadsPerInch = 5.0,
             Acceleration = 5000.0
         };
@@ -647,7 +647,7 @@ public class StepperMotorControllerTests : IDisposable
         using var controller = new StepperMotorController(mockGpio, testConfig);
 
         double rpm = 60;
-        double maxStepsPerSecond = (rpm * testConfig.StepsPerRevolution) / 60.0;
+        double maxStepsPerSecond = (rpm * (int)testConfig.StepsPerRevolution) / 60.0;
         int fullAccelSteps = (int)((maxStepsPerSecond * maxStepsPerSecond) / (2 * testConfig.Acceleration)); // 16 steps
 
         int totalSteps = 10; // Less than full accel+decel (16+16=32)
@@ -657,7 +657,7 @@ public class StepperMotorControllerTests : IDisposable
         int expectedDecelSteps = totalSteps - expectedAccelSteps; // 5
 
         // Act
-        await controller.MoveInchesAsync(totalSteps / (testConfig.StepsPerRevolution * testConfig.LeadScrewThreadsPerInch), rpm);
+        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.StepsPerRevolution * testConfig.LeadScrewThreadsPerInch), rpm);
 
         // Assert - Should still pulse correct number of times
         mockGpio.Received(totalSteps).Write(testConfig.PulsePin, PinValue.High);
@@ -675,7 +675,7 @@ public class StepperMotorControllerTests : IDisposable
             DirectionPin = 20,
             MinLimitSwitchPin = 24,
             MaxLimitSwitchPin = 23,
-            StepsPerRevolution = 400,
+            StepsPerRevolution = StepsPerRevolution.SPR_400,
             LeadScrewThreadsPerInch = 5.0,
             Acceleration = 5000.0
         };
@@ -684,13 +684,13 @@ public class StepperMotorControllerTests : IDisposable
         using var controller = new StepperMotorController(mockGpio, testConfig);
 
         double rpm = 60;
-        double maxStepsPerSecond = (rpm * testConfig.StepsPerRevolution) / 60.0; // 400 steps/sec
+        double maxStepsPerSecond = (rpm * (int)testConfig.StepsPerRevolution) / 60.0; // 400 steps/sec
         double targetDelayMicroseconds = 1_000_000.0 / maxStepsPerSecond; // 2500 microseconds
 
         int totalSteps = 100; // Enough steps for full accel, constant speed, and decel
 
         // Act
-        await controller.MoveInchesAsync(totalSteps / (testConfig.StepsPerRevolution * testConfig.LeadScrewThreadsPerInch), rpm);
+        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.StepsPerRevolution * testConfig.LeadScrewThreadsPerInch), rpm);
 
         // Assert - Verify target delay calculation
         Assert.Equal(2500.0, targetDelayMicroseconds, 0.1);
@@ -706,7 +706,7 @@ public class StepperMotorControllerTests : IDisposable
             DirectionPin = 20,
             MinLimitSwitchPin = 24,
             MaxLimitSwitchPin = 23,
-            StepsPerRevolution = 400,
+            StepsPerRevolution = StepsPerRevolution.SPR_400,
             LeadScrewThreadsPerInch = 5.0,
             Acceleration = 5000.0
         };
@@ -715,14 +715,14 @@ public class StepperMotorControllerTests : IDisposable
         using var controller = new StepperMotorController(mockGpio, testConfig);
 
         double rpm = 60;
-        double maxStepsPerSecond = (rpm * testConfig.StepsPerRevolution) / 60.0;
+        double maxStepsPerSecond = (rpm * (int)testConfig.StepsPerRevolution) / 60.0;
         int accelSteps = (int)((maxStepsPerSecond * maxStepsPerSecond) / (2 * testConfig.Acceleration));
         int decelSteps = accelSteps; // Should be symmetric
 
         int totalSteps = 100;
 
         // Act
-        await controller.MoveInchesAsync(totalSteps / (testConfig.StepsPerRevolution * testConfig.LeadScrewThreadsPerInch), rpm);
+        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.StepsPerRevolution * testConfig.LeadScrewThreadsPerInch), rpm);
 
         // Assert - Verify symmetry
         Assert.Equal(accelSteps, decelSteps);
@@ -739,7 +739,7 @@ public class StepperMotorControllerTests : IDisposable
             DirectionPin = 20,
             MinLimitSwitchPin = 24,
             MaxLimitSwitchPin = 23,
-            StepsPerRevolution = 400,
+            StepsPerRevolution = StepsPerRevolution.SPR_400,
             LeadScrewThreadsPerInch = 5.0,
             Acceleration = 5000.0
         };
@@ -759,10 +759,10 @@ public class StepperMotorControllerTests : IDisposable
     }
 
     [Theory]
-    [InlineData(30, 200)]  // 30 RPM, 200 steps/rev
-    [InlineData(60, 400)]  // 60 RPM, 400 steps/rev
-    [InlineData(120, 800)] // 120 RPM, 800 steps/rev
-    public async Task ExecuteMotionAsync_ShouldCalculateCorrectlyForDifferentConfigurations(double rpm, int stepsPerRev)
+    [InlineData(30, StepsPerRevolution.SPR_400)]  // 30 RPM, 200 steps/rev
+    [InlineData(60, StepsPerRevolution.SPR_400)]  // 60 RPM, 400 steps/rev
+    [InlineData(120, StepsPerRevolution.SPR_800)] // 120 RPM, 800 steps/rev
+    public async Task ExecuteMotionAsync_ShouldCalculateCorrectlyForDifferentConfigurations(double rpm, StepsPerRevolution stepsPerRev)
     {
         // Arrange
         var testConfig = new ControllerConfig
@@ -779,13 +779,13 @@ public class StepperMotorControllerTests : IDisposable
         mockGpio.Read(Arg.Any<int>()).Returns(PinValue.High);
         using var controller = new StepperMotorController(mockGpio, testConfig);
 
-        double maxStepsPerSecond = (rpm * stepsPerRev) / 60.0;
+        double maxStepsPerSecond = (rpm * (int)stepsPerRev) / 60.0;
         int expectedAccelSteps = (int)((maxStepsPerSecond * maxStepsPerSecond) / (2 * testConfig.Acceleration));
         double expectedTargetDelay = 1_000_000.0 / maxStepsPerSecond;
 
         // Act - move enough steps for full profile
         int totalSteps = Math.Max(expectedAccelSteps * 3, 50);
-        await controller.MoveInchesAsync(totalSteps / (testConfig.StepsPerRevolution * testConfig.LeadScrewThreadsPerInch), rpm);
+        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.StepsPerRevolution * testConfig.LeadScrewThreadsPerInch), rpm);
 
         // Assert - calculations should be consistent
         Assert.True(expectedAccelSteps > 0);

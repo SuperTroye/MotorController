@@ -10,14 +10,15 @@ IGpioController gpioController = OperatingSystem.IsWindows() ?
     new GpioControllerWrapper(new GpioController());
 
 // Initialize motor controller
-var motorController = new StepperMotorController(gpioController, new ControllerConfig());
+var config = new ControllerConfig();
+var motorController = new StepperMotorController(gpioController, config);
 
 // Create and run application
 var application = Application.New("motorcontroller.app", Gio.ApplicationFlags.FlagsNone);
 
 application.OnActivate += (sender, args) =>
 {
-    CreateMainWindow((Application)sender, motorController);
+    CreateMainWindow((Application)sender, motorController, config);
 };
 
 return application.RunWithSynchronizationContext(null);
@@ -25,14 +26,14 @@ return application.RunWithSynchronizationContext(null);
 
 
 // Create main window
-static void CreateMainWindow(Application app, StepperMotorController motorController)
+static void CreateMainWindow(Application app, StepperMotorController motorController, ControllerConfig config)
 {
     var window = ApplicationWindow.New(app);
-    window.SetDecorated(false);
+    window.SetDecorated(true);
     window.SetDefaultSize(800, 480);
     window.SetResizable(false);
 
-    var ui = new MotorControlUI(window, motorController);
+    var ui = new MotorControlUI(window, motorController, config);
     window.Show();
 }
 
@@ -41,6 +42,7 @@ class MotorControlUI
 {
     private readonly ApplicationWindow _window;
     private readonly StepperMotorController _motorController;
+    private readonly ControllerConfig _config;
     private readonly Label _speedLabel;
     private readonly Label _positionLabel;
     private readonly Entry _speedEntry;
@@ -50,6 +52,7 @@ class MotorControlUI
     private readonly Button _minLimitButton;
     private readonly Button _maxLimitButton;
     private readonly Button _powerButton;
+    private readonly Button _settingsButton;
     private readonly DrawingArea _minLimitIndicator;
     private readonly DrawingArea _maxLimitIndicator;
     private CancellationTokenSource? _moveCts;
@@ -57,10 +60,11 @@ class MotorControlUI
     private const double MAX_RPM = 350;
     private double _currentRpm = 100;
 
-    public MotorControlUI(ApplicationWindow window, StepperMotorController motorController)
+    public MotorControlUI(ApplicationWindow window, StepperMotorController motorController, ControllerConfig config)
     {
         _window = window;
         _motorController = motorController;
+        _config = config;
 
         // Subscribe to limit switch events
         _motorController.MinLimitSwitchTriggered += OnMinLimitSwitchChanged;
@@ -152,7 +156,7 @@ class MotorControlUI
         speedInputLabel.SetSizeRequest(120, -1);
         _speedEntry = Entry.New();
         _speedEntry.SetText("100");
-        _speedEntry.SetSizeRequest(150, -1);
+        _speedEntry.SetSizeRequest(80, -1);
         _speedEntry.SetEditable(false);
         _speedEntry.SetCanFocus(true);
 
@@ -176,7 +180,7 @@ class MotorControlUI
         positionInputLabel.SetSizeRequest(120, -1);
         _positionEntry = Entry.New();
         _positionEntry.SetText("0");
-        _positionEntry.SetSizeRequest(150, -1);
+        _positionEntry.SetSizeRequest(80, -1);
         _positionEntry.SetEditable(false);
         _positionEntry.SetCanFocus(true);
 
@@ -208,14 +212,25 @@ class MotorControlUI
         actionButtonBox.Append(_stopButton);
         mainBox.Append(actionButtonBox);
 
-        // Power button
+        // Settings and Power buttons
+        var bottomButtonBox = Box.New(Orientation.Horizontal, 10);
+        bottomButtonBox.SetHexpand(true);
+        bottomButtonBox.SetHalign(Align.Fill);
+        bottomButtonBox.SetMarginTop(20);
+
+        _settingsButton = Button.NewWithLabel("⚙ Settings");
+        _settingsButton.SetSizeRequest(120, 40);
+        _settingsButton.SetHalign(Align.Start);
+        _settingsButton.OnClicked += OnSettingsButtonClicked;
+
         _powerButton = Button.NewWithLabel("⏻ Power");
         _powerButton.SetSizeRequest(120, 40);
         _powerButton.SetHalign(Align.End);
-        _powerButton.SetValign(Align.End);
-        _powerButton.SetMarginTop(20);
         _powerButton.OnClicked += OnPowerButtonClicked;
-        mainBox.Append(_powerButton);
+
+        bottomButtonBox.Append(_settingsButton);
+        bottomButtonBox.Append(_powerButton);
+        mainBox.Append(bottomButtonBox);
 
         _window.SetChild(mainBox);
 
@@ -543,6 +558,249 @@ class MotorControlUI
 
         dialog.SetChild(contentBox);
         dialog.Show();
+    }
+
+    private void OnSettingsButtonClicked(Button sender, EventArgs args)
+    {
+        var dialog = new Dialog();
+        dialog.SetTitle("Configuration");
+        dialog.SetTransientFor(_window);
+        dialog.SetModal(true);
+        dialog.SetDefaultSize(600, 460);
+
+        var scrolledWindow = ScrolledWindow.New();
+        scrolledWindow.SetPolicy(PolicyType.Never, PolicyType.Automatic);
+
+        var contentBox = Box.New(Orientation.Vertical, 8);
+        contentBox.SetMarginTop(8);
+        contentBox.SetMarginBottom(8);
+        contentBox.SetMarginStart(15);
+        contentBox.SetMarginEnd(15);
+
+        // Warning message
+        var warningLabel = Label.New("Note: Changes require restart.");
+        warningLabel.SetWrap(true);
+        warningLabel.SetMarkup("<small><i>Changes require restart</i></small>");
+        contentBox.Append(warningLabel);
+
+        // GPIO Pins Section
+        var pinsLabel = Label.New("GPIO Pins");
+        pinsLabel.SetMarkup("<b><small>GPIO Pins</small></b>");
+        pinsLabel.SetHalign(Align.Start);
+        pinsLabel.SetMarginTop(3);
+        contentBox.Append(pinsLabel);
+
+        // Create horizontal grid for pins (2 columns)
+        var pinsGrid = Grid.New();
+        pinsGrid.SetRowSpacing(5);
+        pinsGrid.SetColumnSpacing(10);
+        pinsGrid.SetColumnHomogeneous(true);
+
+        // Row 0: Pulse and Direction
+        pinsGrid.Attach(CreateConfigRow("Pulse:", _config.PulsePin.ToString(), val => _config.PulsePin = (int)val, 0, 40), 0, 0, 1, 1);
+        pinsGrid.Attach(CreateConfigRow("Direction:", _config.DirectionPin.ToString(), val => _config.DirectionPin = (int)val, 0, 40), 1, 0, 1, 1);
+
+        // Row 1: Min and Max Limit
+        pinsGrid.Attach(CreateConfigRow("Min Limit:", _config.MinLimitSwitchPin.ToString(), val => _config.MinLimitSwitchPin = (int)val, 0, 40), 0, 1, 1, 1);
+        pinsGrid.Attach(CreateConfigRow("Max Limit:", _config.MaxLimitSwitchPin.ToString(), val => _config.MaxLimitSwitchPin = (int)val, 0, 40), 1, 1, 1, 1);
+
+        // Row 2: Enable (spans both columns)
+        pinsGrid.Attach(CreateConfigRow("Enable (opt):", _config.EnablePin?.ToString() ?? "None", val => _config.EnablePin = val == 0 ? null : (int?)val, 0, 40), 0, 2, 2, 1);
+
+        contentBox.Append(pinsGrid);
+
+        // Motor Settings Section
+        var motorLabel = Label.New("Motor Settings");
+        motorLabel.SetMarkup("<b><small>Motor Settings</small></b>");
+        motorLabel.SetHalign(Align.Start);
+        motorLabel.SetMarginTop(5);
+        contentBox.Append(motorLabel);
+
+        // Create horizontal box for Steps and Lead Screw
+        var motorGrid = Grid.New();
+        motorGrid.SetRowSpacing(5);
+        motorGrid.SetColumnSpacing(10);
+        motorGrid.SetColumnHomogeneous(true);
+
+        // Row 0: Steps Per Revolution and Lead Screw
+        motorGrid.Attach(CreateConfigDropdownRow("Steps/Rev:", _config.StepsPerRevolution, val => _config.StepsPerRevolution = val), 0, 0, 1, 1);
+        motorGrid.Attach(CreateConfigRow("Threads/Inch:", _config.LeadScrewThreadsPerInch.ToString("F2"), val => _config.LeadScrewThreadsPerInch = val, 0.1, 100), 1, 0, 1, 1);
+
+        contentBox.Append(motorGrid);
+        contentBox.Append(CreateConfigSliderRow("Acceleration (steps/sec²):", _config.Acceleration, val => _config.Acceleration = val, 1000, 10000));
+
+        // Close button
+        var closeButton = Button.NewWithLabel("Close");
+        closeButton.SetSizeRequest(-1, 35);
+        closeButton.SetMarginTop(10);
+        closeButton.OnClicked += (s, e) => dialog.Close();
+        contentBox.Append(closeButton);
+
+        scrolledWindow.SetChild(contentBox);
+        dialog.SetChild(scrolledWindow);
+        dialog.Show();
+    }
+
+
+    private Box CreateConfigRow(string label, string value, Action<double> onValueChanged, double minValue, double maxValue)
+    {
+        var rowBox = Box.New(Orientation.Horizontal, 5);
+        rowBox.SetHexpand(true);
+
+        var labelWidget = Label.New(label);
+        labelWidget.SetMarkup($"<small>{label}</small>");
+        labelWidget.SetSizeRequest(80, -1);
+        labelWidget.SetHalign(Align.Start);
+        rowBox.Append(labelWidget);
+
+        var valueEntry = Entry.New();
+        valueEntry.SetText(value);
+        valueEntry.SetSizeRequest(25, -1);
+        valueEntry.SetEditable(false);
+        valueEntry.SetCanFocus(true);
+
+        var entryClick = GestureClick.New();
+        entryClick.SetPropagationPhase(Gtk.PropagationPhase.Capture);
+        entryClick.OnPressed += (sender, args) =>
+        {
+            var keypadDialog = new Dialog();
+            keypadDialog.SetTitle(label);
+            keypadDialog.SetTransientFor(_window);
+            keypadDialog.SetModal(true);
+            keypadDialog.SetDefaultSize(300, 300);
+
+            var keypad = new Keypad();
+            keypad.Entry.SetText(valueEntry.GetText());
+
+            keypad.CloseRequested += (s, e) =>
+            {
+                var inputValue = keypad.Entry.GetText();
+
+                if (!string.IsNullOrWhiteSpace(inputValue) && double.TryParse(inputValue, out var numValue))
+                {
+                    if (numValue < minValue)
+                    {
+                        ShowError($"Value must be at least {minValue}");
+                        return;
+                    }
+                    if (numValue > maxValue)
+                    {
+                        ShowError($"Value must be no more than {maxValue}");
+                        return;
+                    }
+
+                    valueEntry.SetText(inputValue);
+                    onValueChanged(numValue);
+                    keypadDialog.Close();
+                }
+                else if (string.IsNullOrWhiteSpace(inputValue) && label.Contains("opt"))
+                {
+                    valueEntry.SetText("None");
+                    onValueChanged(0);
+                    keypadDialog.Close();
+                }
+                else
+                {
+                    ShowError("Please enter a valid number");
+                }
+            };
+
+            keypadDialog.SetChild(keypad);
+            keypadDialog.Show();
+        };
+        valueEntry.AddController(entryClick);
+
+        rowBox.Append(valueEntry);
+
+        return rowBox;
+    }
+
+    private Box CreateConfigDropdownRow(string label, StepsPerRevolution currentValue, Action<StepsPerRevolution> onValueChanged)
+    {
+        var rowBox = Box.New(Orientation.Horizontal, 5);
+        rowBox.SetHexpand(true);
+
+        var labelWidget = Label.New(label);
+        labelWidget.SetMarkup($"<small>{label}</small>");
+        labelWidget.SetSizeRequest(80, -1);
+        labelWidget.SetHalign(Align.Start);
+        rowBox.Append(labelWidget);
+
+        // Create string list with all enum values
+        var stringList = StringList.New(null);
+        var enumValues = Enum.GetValues<StepsPerRevolution>();
+        uint selectedIndex = 0;
+
+        for (int i = 0; i < enumValues.Length; i++)
+        {
+            var enumValue = enumValues[i];
+            stringList.Append($"{(int)enumValue}");
+            if (enumValue == currentValue)
+            {
+                selectedIndex = (uint)i;
+            }
+        }
+
+        var dropdown = DropDown.New(stringList, null);
+        dropdown.SetSizeRequest(80, -1);
+        dropdown.SetSelected(selectedIndex);
+
+        // Handle selection change
+        dropdown.OnNotify += (sender, args) =>
+        {
+            if (args.Pspec.GetName() == "selected")
+            {
+                var selected = dropdown.GetSelected();
+                if (selected < enumValues.Length)
+                {
+                    onValueChanged(enumValues[selected]);
+                }
+            }
+        };
+
+        rowBox.Append(dropdown);
+
+        return rowBox;
+    }
+
+    private Box CreateConfigSliderRow(string label, double currentValue, Action<double> onValueChanged, double minValue, double maxValue)
+    {
+        var rowBox = Box.New(Orientation.Vertical, 2);
+        rowBox.SetHexpand(true);
+
+        // Label row with current value
+        var labelBox = Box.New(Orientation.Horizontal, 8);
+        labelBox.SetHexpand(true);
+
+        var labelWidget = Label.New(label);
+        labelWidget.SetMarkup($"<small>{label}</small>");
+        labelWidget.SetHalign(Align.Start);
+        labelBox.Append(labelWidget);
+
+        var valueLabel = Label.New($"{currentValue:F0}");
+        valueLabel.SetHalign(Align.End);
+        valueLabel.SetHexpand(true);
+        labelBox.Append(valueLabel);
+
+        rowBox.Append(labelBox);
+
+        // Scale (slider) widget
+        var scale = Scale.NewWithRange(Orientation.Horizontal, minValue, maxValue, 100);
+        scale.SetValue(currentValue);
+        scale.SetDrawValue(false);
+        scale.SetHexpand(true);
+
+        // Handle value change
+        scale.OnValueChanged += (sender, args) =>
+        {
+            var newValue = scale.GetValue();
+            valueLabel.SetText($"{newValue:F0}");
+            onValueChanged(newValue);
+        };
+
+        rowBox.Append(scale);
+
+        return rowBox;
     }
 }
 

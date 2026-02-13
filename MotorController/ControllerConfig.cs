@@ -38,7 +38,7 @@ public class ControllerConfig
     /// <summary>
     /// Gets or sets the number of steps per revolution for the stepper motor
     /// </summary>
-    public int StepsPerRevolution { get; set; } = 400;
+    public StepsPerRevolution StepsPerRevolution { get; set; } = StepsPerRevolution.SPR_400;
 
     /// <summary>
     /// Gets or sets the number of threads per inch for the lead screw.
@@ -52,3 +52,13 @@ public class ControllerConfig
 }
 
 
+public enum StepsPerRevolution
+{
+    SPR_200 = 200,
+    SPR_400 = 400,
+    SPR_800 = 800,
+    SPR_1600 = 1600,
+    SPR_3200 = 3200,
+    SPR_6400 = 6400,
+    SPR_12800 = 12800
+}

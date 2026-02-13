@@ -20,7 +20,7 @@ public class StepperMotorController : IDisposable
             _positionLock.Wait();
             try
             {
-                return _currentPositionSteps / _config.StepsPerRevolution / _config.LeadScrewThreadsPerInch;
+                return _currentPositionSteps / (int)_config.StepsPerRevolution / _config.LeadScrewThreadsPerInch;
             }
             finally
             {
@@ -85,7 +85,7 @@ public class StepperMotorController : IDisposable
         if (rpm <= 0)
             throw new ArgumentException("RPM must be greater than zero", nameof(rpm));
 
-        var totalSteps = (int)(inches * _config.LeadScrewThreadsPerInch * _config.StepsPerRevolution);
+        var totalSteps = (int)(inches * _config.LeadScrewThreadsPerInch * (int)_config.StepsPerRevolution);
         var direction = totalSteps >= 0;
 
         _gpio.Write(_config.DirectionPin, direction ? PinValue.High : PinValue.Low);
@@ -132,7 +132,7 @@ public class StepperMotorController : IDisposable
         {
             try
             {
-                var maxStepsPerSecond = (rpm * _config.StepsPerRevolution) / 60.0;
+                var maxStepsPerSecond = (rpm * (int)_config.StepsPerRevolution) / 60.0;
                 var targetDelayMicroseconds = 1_000_000.0 / maxStepsPerSecond;
 
                 // Initial delay using David Austin algorithm: c0 = 0.676 * sqrt(2/α) * 10^6
@@ -288,7 +288,7 @@ public class StepperMotorController : IDisposable
     /// <returns>A task that represents the asynchronous operation of executing the motion sequence.</returns>
     internal Task ExecuteMotionAsync(int steps, double rpm, CancellationToken cancellationToken)
     {
-        var maxStepsPerSecond = (rpm * _config.StepsPerRevolution) / 60.0;
+        var maxStepsPerSecond = (rpm * (int)_config.StepsPerRevolution) / 60.0;
         var targetDelayMicroseconds = 1000000.0 / maxStepsPerSecond;
 
         // Initial delay using David Austin algorithm: c0 = 0.676 * sqrt(2/α) * 10^6

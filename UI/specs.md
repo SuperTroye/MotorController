@@ -23,6 +23,13 @@ Create a button to open a dialog for shutting down or restarting the Raspberry P
 
 The UI app will be running in Kiosk mode without a virtual keyboard, so it will need to account for user input. Create a Keypad widget to accept numeric input for setting the RPM and Position. Use a Grid and add buttons for 0-9, Backspace, and Clear. Connect the clicked signal of each button to append text to a Entry.
 
+
+# Settings Screen
+Create a screen to view and edit the ControllerConfig values.
+The StepsPerRevolution property is an enum, so use a dropdown of the enum values.
+Use a gtk range slider to set the Acceleration with a range of 1000 to 10000.
+
+
 Make sure to build the solution to make sure there are no errors.
 
 
