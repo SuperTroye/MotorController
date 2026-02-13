@@ -27,4 +27,4 @@ Make sure to build the solution to make sure there are no errors.
 
 
 # Kiosk Mode
-Create a shell script to execute on raspberry pi that installs cage kiosk mode and sets the default application to the UI project.
+Create a service unit file that uses cage kiosk mode and sets the default application to the UI project.

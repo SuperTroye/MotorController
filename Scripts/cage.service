@@ -1,0 +1,14 @@
+[Unit]
+Description=Cage Kiosk with Motor Controller UI
+After=network.target graphical.target
+
+[Service]
+Type=simple
+User=troye
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+ExecStart=/usr/bin/cage /home/troye/MotorController/UI/bin/Release/net10.0/linux-arm64/publish/UI
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=graphical.target
