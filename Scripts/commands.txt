@@ -1,0 +1,33 @@
+# update and upgrade the system
+sudo apt-get update && sudo apt-get dist-upgrade -y
+
+# install dotnet sdk/runtime
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel LTS
+
+# Add dotnet to PATH
+echo 'export DOTNET_ROOT=$HOME/.dotnet' >> ~/.bashrc
+echo 'export PATH=$PATH:$HOME/.dotnet' >> ~/.bashrc
+
+echo $PATH
+dotnet --version
+
+# Create the projects directory
+cd /home/troye
+
+# Clone the MotorController repository
+git clone https://github.com/SuperTroye/MotorController.git
+
+# git diff --name-only
+# git restore .
+
+cd /home/troye/MotorController
+git pull
+
+# Publish the .NET application for Linux ARM64
+dotnet publish /home/troye/MotorController/UI/UI.csproj -c Release -r linux-arm64 --self-contained true
+
+# Make the published UI executable
+sudo chmod +x /home/troye/MotorController/UI/bin/Release/net10.0/linux-arm64/publish/UI
+
+# Copy the desktop file
+cp /home/troye/MotorController/Scripts/MotorController.desktop /home/troye/Desktop/
