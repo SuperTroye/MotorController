@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=MotorController
+Comment=Motor Controller UI
+Exec=/home/troye/MotorController/UI/bin/Release/net10.0/linux-arm64/publish/UI
+Type=Application
+Terminal=false
+Categories=Utility;
+Path=/home/troye/MotorController/UI/bin/Release/net10.0/linux-arm64/publish/
