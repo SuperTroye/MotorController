@@ -322,7 +322,7 @@ public class StepperMotorControllerTests : IDisposable
         }
 
         // Assert
-        _mockGpio.Received().Write(_config.DirectionPin, PinValue.High);
+        _mockGpio.Received().Write(_config.DirectionPin, PinValue.Low);
     }
 
     [Fact]
@@ -342,7 +342,7 @@ public class StepperMotorControllerTests : IDisposable
         }
 
         // Assert
-        _mockGpio.Received().Write(_config.DirectionPin, PinValue.Low);
+        _mockGpio.Received().Write(_config.DirectionPin, PinValue.High);
     }
 
     #endregion
@@ -398,7 +398,7 @@ public class StepperMotorControllerTests : IDisposable
         }
 
         // Assert
-        _mockGpio.Received().Write(_config.DirectionPin, PinValue.Low);
+        _mockGpio.Received().Write(_config.DirectionPin, PinValue.High);
     }
 
     [Fact]
