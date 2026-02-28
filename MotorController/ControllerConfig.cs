@@ -23,12 +23,12 @@ public class ControllerConfig
     /// <summary>
     /// Gets or sets the GPIO pin number used to detect the minimum limit switch.
     /// </summary>
-    public int MinLimitSwitchPin { get; set; } = 23;
+    public int MinLimitSwitchPin { get; set; } = 24;
 
     /// <summary>
     /// Gets or sets the GPIO pin number used for the maximum limit switch.
     /// </summary>
-    public int MaxLimitSwitchPin { get; set; } = 24;
+    public int MaxLimitSwitchPin { get; set; } = 23;
 
     /// <summary>
     /// Gets or sets the pin number used to enable the device, if applicable.

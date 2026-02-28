@@ -294,7 +294,7 @@ public class StepperMotorControllerTests : IDisposable
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _controller.RunToLimitSwitchAsync(true, 0));
+            _controller.RunToLimitSwitchAsync(LimitSwitch.Max, 0));
     }
 
     [Fact]
@@ -302,7 +302,7 @@ public class StepperMotorControllerTests : IDisposable
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _controller.RunToLimitSwitchAsync(true, -10));
+            _controller.RunToLimitSwitchAsync(LimitSwitch.Max, -10));
     }
 
     [Fact]
@@ -314,7 +314,7 @@ public class StepperMotorControllerTests : IDisposable
         // Act
         try
         {
-            await _controller.RunToLimitSwitchAsync(true, 60, cts.Token);
+            await _controller.RunToLimitSwitchAsync(LimitSwitch.Max, 60, cts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -334,7 +334,7 @@ public class StepperMotorControllerTests : IDisposable
         // Act
         try
         {
-            await _controller.RunToLimitSwitchAsync(false, 60, cts.Token);
+            await _controller.RunToLimitSwitchAsync(LimitSwitch.Min, 60, cts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -390,7 +390,7 @@ public class StepperMotorControllerTests : IDisposable
         // Act
         try
         {
-            await _controller.RunToLimitSwitchAsync(false, 60, cts.Token);
+            await _controller.RunToLimitSwitchAsync(LimitSwitch.Min, 60, cts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -429,7 +429,7 @@ public class StepperMotorControllerTests : IDisposable
         minLimitCallback?.Invoke(null, eventArgs);
 
         // Act
-        await controller.RunToLimitSwitchAsync(false, 60);
+        await controller.RunToLimitSwitchAsync(LimitSwitch.Min, 60);
         await controller.ResetPositionAsync();
 
         // Assert
@@ -1014,7 +1014,7 @@ public class StepperMotorControllerTests : IDisposable
         using var controller = new StepperMotorController(mockGpio, _config, mockLogger);
 
         // Act - Start motion to limit switch
-        var motionTask = Task.Run(async () => await controller.RunToLimitSwitchAsync(false, 60));
+        var motionTask = Task.Run(async () => await controller.RunToLimitSwitchAsync(LimitSwitch.Min, 60));
         
         // Wait for motion to start
         await Task.Delay(50);

@@ -124,14 +124,15 @@ public class StepperMotorController : IStepperMotorController
         }
     }
 
-    public Task RunToLimitSwitchAsync(bool toMaxLimit, double rpm, CancellationToken cancellationToken = default)
+    public Task RunToLimitSwitchAsync(LimitSwitch direction, double rpm, CancellationToken cancellationToken = default)
     {
         if (rpm <= 0)
             throw new ArgumentException("RPM must be greater than zero", nameof(rpm));
 
         Interlocked.Exchange(ref _targetRpm, rpm); // Initialize target RPM
 
-        _gpio.Write(_config.DirectionPin, toMaxLimit ? PinValue.High : PinValue.Low);
+        bool toMaxLimit = direction == LimitSwitch.Max;
+        _gpio.Write(_config.DirectionPin, toMaxLimit ? PinValue.Low : PinValue.High);
 
         if (_config.EnablePin.HasValue)
             _gpio.Write(_config.EnablePin.Value, PinValue.Low); // Enable motor

@@ -23,12 +23,12 @@ public interface IStepperMotorController : IDisposable
     /// Moves the carriage toward the specified limit switch at the given speed until the switch is reached or the
     /// operation is canceled.
     /// </summary>
-    /// <param name="toMaxLimit">true to move toward the maximum limit switch; false to move toward the minimum limit switch.</param>
+    /// <param name="direction">The direction to move: Min for minimum limit switch, Max for maximum limit switch.</param>
     /// <param name="rpm">The speed, in revolutions per minute, at which to move the carriage. Must be greater than zero.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
     /// <returns>A task that represents the asynchronous operation. The task completes when the carriage reaches the specified
     /// limit switch or the operation is canceled.</returns>
-    Task RunToLimitSwitchAsync(bool toMaxLimit, double rpm, CancellationToken cancellationToken = default);
+    Task RunToLimitSwitchAsync(LimitSwitch direction, double rpm, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Sets the target speed in revolutions per minute (RPM).

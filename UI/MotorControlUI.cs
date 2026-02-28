@@ -298,7 +298,7 @@ public class MotorControlUI
             _moveCts = new CancellationTokenSource();
 
             SetButtonsEnabled(false);
-            await _motorController.RunToLimitSwitchAsync(false, _currentRpm, _moveCts.Token);
+            await _motorController.RunToLimitSwitchAsync(LimitSwitch.Min, _currentRpm, _moveCts.Token);
             await _motorController.ResetPositionAsync();
         }
         catch (Exception ex)
@@ -319,7 +319,7 @@ public class MotorControlUI
             _moveCts = new CancellationTokenSource();
 
             SetButtonsEnabled(false);
-            await _motorController.RunToLimitSwitchAsync(true, _currentRpm, _moveCts.Token);
+            await _motorController.RunToLimitSwitchAsync(LimitSwitch.Max, _currentRpm, _moveCts.Token);
         }
         catch (Exception ex)
         {

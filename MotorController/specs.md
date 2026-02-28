@@ -37,7 +37,11 @@ Create a boolean property for the limit switches (IsMinLimitSwitchTriggered and 
 
 The limit switches should be read by using GpioController.RegisterCallbackForPinValueChangedEvent.
 
-Create a method "RunToLimitSwitchAsync" to run the motor until a limit switch is detected. If the direction is towards the min limit switch, it should set current position to 0. Make sure to incorporate acceleration and deceleration.
+Create an enum called LimitSwitch with the following values:
+- Min - Move toward the minimum limit switch
+- Max - Move toward the maximum limit switch
+
+Create a method "RunToLimitSwitchAsync" to run the motor until a limit switch is detected. This method takes a LimitSwitch enum parameter to specify which limit switch to move toward. If the direction is towards the min limit switch, it should set current position to 0. Make sure to incorporate acceleration and deceleration.
 
 As soon as a limit switch is detected, the motor should begin to decelerate. There can be a maximum of 300 steps to decelerate.
 
