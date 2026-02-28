@@ -14,6 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{FA65
 		Scripts\commands.txt = Scripts\commands.txt
 		Scripts\MotorController.desktop = Scripts\MotorController.desktop
 		Scripts\PREEMPT_RT.txt = Scripts\PREEMPT_RT.txt
+		Scripts\update-and-publish.sh = Scripts\update-and-publish.sh
 	EndProjectSection
 EndProject
 Global
