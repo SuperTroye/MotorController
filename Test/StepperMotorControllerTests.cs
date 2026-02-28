@@ -306,7 +306,7 @@ public class StepperMotorControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task RunToLimitSwitchAsync_ShouldSetDirectionHigh_WhenMovingToMaxLimit()
+    public async Task RunToLimitSwitchAsync_ShouldSetDirectionLow_WhenMovingToMaxLimit()
     {
         // Arrange
         var cts = new CancellationTokenSource(100);
@@ -326,7 +326,7 @@ public class StepperMotorControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task RunToLimitSwitchAsync_ShouldSetDirectionLow_WhenMovingToMinLimit()
+    public async Task RunToLimitSwitchAsync_ShouldSetDirectionHigh_WhenMovingToMinLimit()
     {
         // Arrange
         var cts = new CancellationTokenSource(100);
@@ -382,7 +382,7 @@ public class StepperMotorControllerTests : IDisposable
     #region HomeAsync Tests
 
     [Fact]
-    public async Task HomeAsync_ShouldSetDirectionLow()
+    public async Task HomeAsync_ShouldSetDirectionHigh()
     {
         // Arrange
         var cts = new CancellationTokenSource(100);
