@@ -202,23 +202,23 @@ public class StepperMotorControllerTests : IDisposable
     }
 
     [Fact]
-    public async Task MoveInchesAsync_ShouldSetDirectionHigh_WhenMovingPositive()
+    public async Task MoveInchesAsync_ShouldSetDirectionLow_WhenMovingPositive()
     {
         // Act
         await _controller.MoveInchesAsync(0.1, 60);
 
         // Assert
-        _mockGpio.Received().Write(_config.DirectionPin, PinValue.High);
+        _mockGpio.Received().Write(_config.DirectionPin, PinValue.Low);
     }
 
     [Fact]
-    public async Task MoveInchesAsync_ShouldSetDirectionLow_WhenMovingNegative()
+    public async Task MoveInchesAsync_ShouldSetDirectionHigh_WhenMovingNegative()
     {
         // Act
         await _controller.MoveInchesAsync(-0.1, 60);
 
         // Assert
-        _mockGpio.Received().Write(_config.DirectionPin, PinValue.Low);
+        _mockGpio.Received().Write(_config.DirectionPin, PinValue.High);
     }
 
     [Fact]
