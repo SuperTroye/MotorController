@@ -104,7 +104,7 @@ public class StepperMotorController : IStepperMotorController
         var totalSteps = (int)(inches * _config.LeadScrewThreadsPerInch * (int)_config.StepsPerRevolution);
         var direction = totalSteps >= 0;
 
-        _gpio.Write(_config.DirectionPin, direction ? PinValue.High : PinValue.Low);
+        _gpio.Write(_config.DirectionPin, direction ? PinValue.Low : PinValue.High);
 
         if (_config.EnablePin.HasValue)
             _gpio.Write(_config.EnablePin.Value, PinValue.Low); // Enable motor

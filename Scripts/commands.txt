@@ -43,6 +43,12 @@ git config --global user.email "email@email.com"
 # ============================================
 # useful commands
 # ============================================
+./Scripts/update-and-publish.sh
+
+
+# ============================================
+# useful commands
+# ============================================
 pinctrl
 gpioinfo -c 0
 cat /sys/kernel/debug/gpio
