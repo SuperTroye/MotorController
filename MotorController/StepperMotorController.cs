@@ -276,7 +276,7 @@ public class StepperMotorController : IStepperMotorController
     /// constant speed phase of motion. Changes are ignored if RPM is zero or negative.
     /// </remarks>
     /// <param name="rpm">The target speed in revolutions per minute. Must be greater than zero.</param>
-    public void SetTargetRpm(double rpm)
+    public void SetTargetSpeed(double rpm)
     {
         if (rpm <= 0)
         {

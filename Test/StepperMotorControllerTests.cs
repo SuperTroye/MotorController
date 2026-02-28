@@ -809,7 +809,7 @@ public class StepperMotorControllerTests : IDisposable
     public void SetTargetRpm_ShouldAcceptValidRpm()
     {
         // Act
-        _controller.SetTargetRpm(100);
+        _controller.SetTargetSpeed(100);
 
         // Assert - Should not throw and should log
         _mockLogger.Received().Log(
@@ -824,7 +824,7 @@ public class StepperMotorControllerTests : IDisposable
     public void SetTargetRpm_ShouldRejectZeroRpm()
     {
         // Act
-        _controller.SetTargetRpm(0);
+        _controller.SetTargetSpeed(0);
 
         // Assert - Should log warning and not set the value
         _mockLogger.Received().Log(
@@ -839,7 +839,7 @@ public class StepperMotorControllerTests : IDisposable
     public void SetTargetRpm_ShouldRejectNegativeRpm()
     {
         // Act
-        _controller.SetTargetRpm(-50);
+        _controller.SetTargetSpeed(-50);
 
         // Assert - Should log warning and not set the value
         _mockLogger.Received().Log(
@@ -859,7 +859,7 @@ public class StepperMotorControllerTests : IDisposable
     public void SetTargetRpm_ShouldAcceptVariousValidRpmValues(double rpm)
     {
         // Act
-        _controller.SetTargetRpm(rpm);
+        _controller.SetTargetSpeed(rpm);
 
         // Assert - Should log info message
         _mockLogger.Received().Log(
@@ -895,7 +895,7 @@ public class StepperMotorControllerTests : IDisposable
         await Task.Delay(50);
         
         // Change speed during motion
-        controller.SetTargetRpm(120);
+        controller.SetTargetSpeed(120);
         
         // Wait for motion to complete
         await motionTask;
@@ -941,7 +941,7 @@ public class StepperMotorControllerTests : IDisposable
         // Act - Start motion and change speed
         var motionTask = Task.Run(async () => await controller.MoveInchesAsync(2.0, initialRpm));
         await Task.Delay(50);
-        controller.SetTargetRpm(newRpm);
+        controller.SetTargetSpeed(newRpm);
         await motionTask;
 
         // Assert - Verify deceleration calculation is correct
@@ -975,7 +975,7 @@ public class StepperMotorControllerTests : IDisposable
 
         // Act - Start very short motion and immediately try to change speed
         var motionTask = Task.Run(async () => await controller.MoveInchesAsync(0.05, 60));
-        controller.SetTargetRpm(120); // Try to change during acceleration
+        controller.SetTargetSpeed(120); // Try to change during acceleration
         await motionTask;
 
         // Assert - Should complete without error (speed change ignored during acceleration)
@@ -1020,7 +1020,7 @@ public class StepperMotorControllerTests : IDisposable
         await Task.Delay(50);
         
         // Change speed during motion
-        controller.SetTargetRpm(100);
+        controller.SetTargetSpeed(100);
         
         // Trigger limit switch after speed change
         await Task.Delay(50);
@@ -1063,7 +1063,7 @@ public class StepperMotorControllerTests : IDisposable
         for (int i = 0; i < 10; i++)
         {
             var rpm = 50 + (i * 10);
-            speedChangeTasks.Add(Task.Run(() => controller.SetTargetRpm(rpm)));
+            speedChangeTasks.Add(Task.Run(() => controller.SetTargetSpeed(rpm)));
         }
 
         await Task.WhenAll(speedChangeTasks);
@@ -1096,13 +1096,13 @@ public class StepperMotorControllerTests : IDisposable
         var motionTask = Task.Run(async () => await controller.MoveInchesAsync(3.0, 60));
         
         await Task.Delay(20);
-        controller.SetTargetRpm(80);
+        controller.SetTargetSpeed(80);
         
         await Task.Delay(30);
-        controller.SetTargetRpm(120);
+        controller.SetTargetSpeed(120);
         
         await Task.Delay(30);
-        controller.SetTargetRpm(100);
+        controller.SetTargetSpeed(100);
         
         await motionTask;
 

@@ -24,7 +24,7 @@ public class MotorControlUI
     private readonly DrawingArea _minLimitIndicator;
     private readonly DrawingArea _maxLimitIndicator;
     private CancellationTokenSource? _moveCts;
-    private const double MIN_RPM = 1;
+    private const double MIN_RPM = 5;
     private const double MAX_RPM = 350;
     private double _currentRpm = 100;
 
@@ -147,7 +147,7 @@ public class MotorControlUI
             // Update motor speed in real-time (works whether motor is moving or not)
             try
             {
-                _motorController.SetTargetRpm(_currentRpm);
+                _motorController.SetTargetSpeed(_currentRpm);
             }
             catch (Exception ex)
             {

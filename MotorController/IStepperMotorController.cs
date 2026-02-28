@@ -34,7 +34,7 @@ public interface IStepperMotorController : IDisposable
     /// Sets the target speed in revolutions per minute (RPM).
     /// </summary>
     /// <param name="rpm"></param>
-    void SetTargetRpm(double rpm);
+    void SetTargetSpeed(double rpm);
 
     /// <summary>
     /// Asynchronously stops the carriage.
