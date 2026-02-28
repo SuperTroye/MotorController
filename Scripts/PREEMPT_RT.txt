@@ -1,0 +1,62 @@
+# test
+sudo apt install rt-tests
+
+# test with default settings
+sudo cyclictest
+
+# test with round-robin scheduling policy and 4 threads
+sudo cyclictest -policy o -t 4
+
+# test with fifo scheduling policy and 4 threads
+sudo cyclictest -policy fifo -t 4
+
+
+
+
+# clone the kernel repository
+git clone --depth=1 https://github.com/raspberrypi/linux
+
+# install the necessary dependencies
+sudo apt install bc bison flex libssl-dev make libncurses-dev
+
+cd linux
+
+# for Raspberry Pi 4, use the bcm2711_defconfig
+KERNEL=kernel8
+make bcm2711_defconfig
+
+# for Raspberry Pi 5, use the bcm2712_defconfig
+KERNEL=kernel_2712
+make bcm2712_defconfig
+
+# name the kernel
+CONFIG_LOCALVERSION="-v7l-MOTOR_KERNEL"
+
+make menuconfig
+
+#search for PREEMPT_RT in the menu and enable it
+/* General setup --->
+   [*] Preemptible Kernel (Low-Latency Desktop)
+   ( ) Preemptible Kernel (Basic RT)
+   (X) Preemptible Kernel (RT Full)
+
+PRESS 1 to select the RT Full option
+
+# double check that the PREEMPT_RT option is enabled in the .config file
+vi .config
+
+# build the kernel
+make -j6 Image.gz modules dtbs
+
+# install the kernel and modules
+sudo make -j6 modules_install
+
+
+# backup the existing kernel and copy the new kernel and device tree blobs to the firmware directory
+sudo cp /boot/firmware/$KERNEL.img /boot/firmware/$KERNEL-backup.img
+sudo cp arch/arm64/boot/Image.gz /boot/firmware/$KERNEL.img
+sudo cp arch/arm64/boot/dts/broadcom/*.dtb /boot/firmware/
+sudo cp arch/arm64/boot/dts/overlays/*.dtb* /boot/firmware/overlays/
+sudo cp arch/arm64/boot/dts/overlays/README /boot/firmware/overlays/
+
+sudo reboot

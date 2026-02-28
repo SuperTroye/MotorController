@@ -1,0 +1,50 @@
+# ============================================
+# INITIAL SYSTEM SETUP
+# ============================================
+
+# Update and upgrade the system
+sudo apt-get update && sudo apt-get dist-upgrade -y
+
+# Install dotnet sdk/runtime
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel LTS
+
+# Add dotnet to PATH
+echo 'export DOTNET_ROOT=$HOME/.dotnet' >> ~/.bashrc
+echo 'export PATH=$PATH:$HOME/.dotnet' >> ~/.bashrc
+source ~/.bashrc
+
+# Verify installation
+echo $PATH
+dotnet --version
+
+# ============================================
+# CLONE AND BUILD APPLICATION
+# ============================================
+
+# Clone the MotorController repository
+cd /home/troye
+git clone https://github.com/SuperTroye/MotorController.git
+
+# Or if already cloned, pull latest changes
+cd /home/troye/MotorController
+git pull
+
+# Publish the .NET application for Linux ARM64
+dotnet restore
+dotnet publish /home/troye/MotorController/UI/UI.csproj -c Release -r linux-arm64 --self-contained true
+
+# Make the published UI executable
+chmod +x $HOME/MotorController/UI/bin/Release/net10.0/linux-arm64/publish/UI
+
+git config --global user.name "User Name"
+git config --global user.email "email@email.com"
+
+
+# ============================================
+# useful commands
+# ============================================
+pinctrl
+gpioinfo -c 0
+cat /sys/kernel/debug/gpio
+
+

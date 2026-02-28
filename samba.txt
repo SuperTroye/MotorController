@@ -1,0 +1,33 @@
+# Install Samba
+sudo apt install samba samba-common-bin 
+
+# Create a shared directory in the home directory
+mkdir ~/shared
+
+# sets broad permissions, allowing anyone to read, write, and execute files,
+# which can be adjusted later for security
+sudo chmod -R 777 ~/shared
+
+# Open the configuration file using the nano text editor
+sudo nano /etc/samba/smb.conf
+
+# Scroll to the bottom of the file and add the following lines, 
+# replacing <USERNAME> with your Raspberry Pi username (likely pi):
+
+[pi share]
+comment = Raspberry Pi 5 Samba Share
+path = /home/troye/shared
+writeable = yes
+browseable = yes
+public = no
+valid users = troye
+create mask = 0777
+directory mask = 0777
+
+# Save and exit the editor by pressing Ctrl+O, then Enter, and Ctrl+X. 
+
+# set a specific password for your Samba user. This password is independent of your standard Linux login password. 
+sudo smbpasswd -a troye
+
+# Restart Samba Service
+sudo systemctl restart smbd
