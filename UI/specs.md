@@ -20,6 +20,15 @@ Create a button to Stop the motor. This will call the StopAsync method in the St
 Make sure to use the latest version of GirCore.Gtk-4.0 which references GTK4. All design should follow GTK4 best practices.
 
 
+# Fine Adjustment
+Add 2 buttons to the upper right portion of the Main Window. 
+The buttons are for making fine adjustments to the motor speed. 
+Each click of the button would increment or decrement the speed by 1 RPM. 
+The increment button should have an up arrow icon and the decrement button should have a down arrow icon. 
+Use an image from the internet if needed. 
+Use the provided an imge for reference.
+
+
 # Power Dialog Box
 Create a button to open a dialog for shutting down or restarting the Raspberry Pi. 
 The dialog should have options for "Shutdown", "Restart", "Cancel", and "Exit Application". 

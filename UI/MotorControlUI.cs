@@ -66,6 +66,24 @@ public class MotorControlUI
 
         statusBox.Append(speedBox);
         statusBox.Append(positionBox);
+
+        // Fine adjustment buttons for speed (upper right)
+        var fineAdjustBox = Box.New(Orientation.Vertical, 5);
+        fineAdjustBox.SetHalign(Align.End);
+        fineAdjustBox.SetValign(Align.Start);
+
+        var incrementButton = Button.NewWithLabel("▲");
+        incrementButton.SetSizeRequest(50, 40);
+        incrementButton.OnClicked += OnIncrementSpeedClicked;
+
+        var decrementButton = Button.NewWithLabel("▼");
+        decrementButton.SetSizeRequest(50, 40);
+        decrementButton.OnClicked += OnDecrementSpeedClicked;
+
+        fineAdjustBox.Append(incrementButton);
+        fineAdjustBox.Append(decrementButton);
+        statusBox.Append(fineAdjustBox);
+
         mainBox.Append(statusBox);
 
         // Limit switch indicators
@@ -374,6 +392,24 @@ public class MotorControlUI
         catch (Exception ex)
         {
             ShowError($"Error stopping motor: {ex.Message}");
+        }
+    }
+
+    private void OnIncrementSpeedClicked(Button sender, EventArgs args)
+    {
+        if (_currentRpm < MAX_RPM)
+        {
+            _currentRpm += 1;
+            _speedSlider.SetValue(_currentRpm);
+        }
+    }
+
+    private void OnDecrementSpeedClicked(Button sender, EventArgs args)
+    {
+        if (_currentRpm > MIN_RPM)
+        {
+            _currentRpm -= 1;
+            _speedSlider.SetValue(_currentRpm);
         }
     }
 

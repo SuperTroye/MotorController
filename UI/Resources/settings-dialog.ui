@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  
+  <!-- Settings Dialog -->
+  <object class="GtkDialog" id="settings_dialog">
+    <property name="title">Configuration</property>
+    <property name="modal">true</property>
+    <property name="default-width">600</property>
+    <property name="default-height">460</property>
+    
+    <child>
+      <object class="GtkScrolledWindow" id="settings_scrolled_window">
+        <property name="hscrollbar-policy">never</property>
+        <property name="vscrollbar-policy">automatic</property>
+        
+        <child>
+          <object class="GtkBox" id="settings_content_box">
+            <property name="orientation">vertical</property>
+            <property name="spacing">8</property>
+            <property name="margin-top">8</property>
+            <property name="margin-bottom">8</property>
+            <property name="margin-start">15</property>
+            <property name="margin-end">15</property>
+            
+            <!-- Warning Message -->
+            <child>
+              <object class="GtkLabel" id="warning_label">
+                <property name="label">Changes require restart</property>
+                <property name="wrap">true</property>
+                <property name="use-markup">true</property>
+              </object>
+            </child>
+            
+            <!-- GPIO Pins Section Header -->
+            <child>
+              <object class="GtkLabel" id="pins_section_label">
+                <property name="label">&lt;b&gt;&lt;small&gt;GPIO Pins&lt;/small&gt;&lt;/b&gt;</property>
+                <property name="use-markup">true</property>
+                <property name="halign">start</property>
+                <property name="margin-top">3</property>
+              </object>
+            </child>
+            
+            <!-- GPIO Pins Grid (2 columns) -->
+            <child>
+              <object class="GtkGrid" id="pins_grid">
+                <property name="row-spacing">5</property>
+                <property name="column-spacing">10</property>
+                <property name="column-homogeneous">true</property>
+                
+                <!-- Row 0, Col 0: Pulse Pin -->
+                <child>
+                  <object class="GtkBox" id="pulse_pin_box">
+                    <property name="orientation">horizontal</property>
+                    <property name="spacing">5</property>
+                    <property name="hexpand">true</property>
+                    <layout>
+                      <property name="column">0</property>
+                      <property name="row">0</property>
+                    </layout>
+                    <child>
+                      <object class="GtkLabel" id="pulse_pin_label">
+                        <property name="label">&lt;small&gt;Pulse:&lt;/small&gt;</property>
+                        <property name="use-markup">true</property>
+                        <property name="width-request">80</property>
+                        <property name="halign">start</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="pulse_pin_entry">
+                        <property name="text">21</property>
+                        <property name="width-request">25</property>
+                        <property name="editable">false</property>
+                        <property name="can-focus">true</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                
+                <!-- Row 0, Col 1: Direction Pin -->
+                <child>
+                  <object class="GtkBox" id="direction_pin_box">
+                    <property name="orientation">horizontal</property>
+                    <property name="spacing">5</property>
+                    <property name="hexpand">true</property>
+                    <layout>
+                      <property name="column">1</property>
+                      <property name="row">0</property>
+                    </layout>
+                    <child>
+                      <object class="GtkLabel" id="direction_pin_label">
+                        <property name="label">&lt;small&gt;Direction:&lt;/small&gt;</property>
+                        <property name="use-markup">true</property>
+                        <property name="width-request">80</property>
+                        <property name="halign">start</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="direction_pin_entry">
+                        <property name="text">20</property>
+                        <property name="width-request">25</property>
+                        <property name="editable">false</property>
+                        <property name="can-focus">true</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                
+                <!-- Row 1, Col 0: Min Limit Pin -->
+                <child>
+                  <object class="GtkBox" id="min_limit_pin_box">
+                    <property name="orientation">horizontal</property>
+                    <property name="spacing">5</property>
+                    <property name="hexpand">true</property>
+                    <layout>
+                      <property name="column">0</property>
+                      <property name="row">1</property>
+                    </layout>
+                    <child>
+                      <object class="GtkLabel" id="min_limit_pin_label">
+                        <property name="label">&lt;small&gt;Min Limit:&lt;/small&gt;</property>
+                        <property name="use-markup">true</property>
+                        <property name="width-request">80</property>
+                        <property name="halign">start</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="min_limit_pin_entry">
+                        <property name="text">23</property>
+                        <property name="width-request">25</property>
+                        <property name="editable">false</property>
+                        <property name="can-focus">true</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                
+                <!-- Row 1, Col 1: Max Limit Pin -->
+                <child>
+                  <object class="GtkBox" id="max_limit_pin_box">
+                    <property name="orientation">horizontal</property>
+                    <property name="spacing">5</property>
+                    <property name="hexpand">true</property>
+                    <layout>
+                      <property name="column">1</property>
+                      <property name="row">1</property>
+                    </layout>
+                    <child>
+                      <object class="GtkLabel" id="max_limit_pin_label">
+                        <property name="label">&lt;small&gt;Max Limit:&lt;/small&gt;</property>
+                        <property name="use-markup">true</property>
+                        <property name="width-request">80</property>
+                        <property name="halign">start</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="max_limit_pin_entry">
+                        <property name="text">24</property>
+                        <property name="width-request">25</property>
+                        <property name="editable">false</property>
+                        <property name="can-focus">true</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                
+                <!-- Row 2: Enable Pin (spans both columns) -->
+                <child>
+                  <object class="GtkBox" id="enable_pin_box">
+                    <property name="orientation">horizontal</property>
+                    <property name="spacing">5</property>
+                    <property name="hexpand">true</property>
+                    <layout>
+                      <property name="column">0</property>
+                      <property name="row">2</property>
+                      <property name="column-span">2</property>
+                    </layout>
+                    <child>
+                      <object class="GtkLabel" id="enable_pin_label">
+                        <property name="label">&lt;small&gt;Enable (opt):&lt;/small&gt;</property>
+                        <property name="use-markup">true</property>
+                        <property name="width-request">80</property>
+                        <property name="halign">start</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="enable_pin_entry">
+                        <property name="text">None</property>
+                        <property name="width-request">25</property>
+                        <property name="editable">false</property>
+                        <property name="can-focus">true</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            
+            <!-- Motor Settings Section Header -->
+            <child>
+              <object class="GtkLabel" id="motor_section_label">
+                <property name="label">&lt;b&gt;&lt;small&gt;Motor Settings&lt;/small&gt;&lt;/b&gt;</property>
+                <property name="use-markup">true</property>
+                <property name="halign">start</property>
+                <property name="margin-top">5</property>
+              </object>
+            </child>
+            
+            <!-- Motor Settings Grid -->
+            <child>
+              <object class="GtkGrid" id="motor_grid">
+                <property name="row-spacing">5</property>
+                <property name="column-spacing">10</property>
+                <property name="column-homogeneous">true</property>
+                
+                <!-- Row 0, Col 0: Steps Per Revolution Dropdown -->
+                <child>
+                  <object class="GtkBox" id="steps_per_rev_box">
+                    <property name="orientation">horizontal</property>
+                    <property name="spacing">5</property>
+                    <property name="hexpand">true</property>
+                    <layout>
+                      <property name="column">0</property>
+                      <property name="row">0</property>
+                    </layout>
+                    <child>
+                      <object class="GtkLabel" id="steps_per_rev_label">
+                        <property name="label">&lt;small&gt;Steps/Rev:&lt;/small&gt;</property>
+                        <property name="use-markup">true</property>
+                        <property name="width-request">80</property>
+                        <property name="halign">start</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkDropDown" id="steps_per_rev_dropdown">
+                        <property name="width-request">25</property>
+                        <!-- StringList model would be populated in code -->
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                
+                <!-- Row 0, Col 1: Lead Screw Threads Per Inch -->
+                <child>
+                  <object class="GtkBox" id="threads_per_inch_box">
+                    <property name="orientation">horizontal</property>
+                    <property name="spacing">5</property>
+                    <property name="hexpand">true</property>
+                    <layout>
+                      <property name="column">1</property>
+                      <property name="row">0</property>
+                    </layout>
+                    <child>
+                      <object class="GtkLabel" id="threads_per_inch_label">
+                        <property name="label">&lt;small&gt;Threads/Inch:&lt;/small&gt;</property>
+                        <property name="use-markup">true</property>
+                        <property name="width-request">80</property>
+                        <property name="halign">start</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="threads_per_inch_entry">
+                        <property name="text">5.00</property>
+                        <property name="width-request">25</property>
+                        <property name="editable">false</property>
+                        <property name="can-focus">true</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            
+            <!-- Acceleration Slider Row -->
+            <child>
+              <object class="GtkBox" id="acceleration_box">
+                <property name="orientation">horizontal</property>
+                <property name="spacing">5</property>
+                <property name="hexpand">true</property>
+                
+                <child>
+                  <object class="GtkLabel" id="acceleration_label">
+                    <property name="label">&lt;small&gt;Acceleration (steps/sec²):&lt;/small&gt;</property>
+                    <property name="use-markup">true</property>
+                    <property name="width-request">160</property>
+                    <property name="halign">start</property>
+                  </object>
+                </child>
+                
+                <child>
+                  <object class="GtkScale" id="acceleration_slider">
+                    <property name="orientation">horizontal</property>
+                    <property name="adjustment">
+                      <object class="GtkAdjustment">
+                        <property name="lower">1000</property>
+                        <property name="upper">10000</property>
+                        <property name="step-increment">100</property>
+                        <property name="page-increment">1000</property>
+                        <property name="value">5000</property>
+                      </object>
+                    </property>
+                    <property name="draw-value">true</property>
+                    <property name="value-pos">right</property>
+                    <property name="hexpand">true</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            
+            <!-- Close Button -->
+            <child>
+              <object class="GtkButton" id="settings_close_button">
+                <property name="label">Close</property>
+                <property name="height-request">35</property>
+                <property name="margin-top">10</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

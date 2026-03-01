@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  
+  <!-- Power Dialog -->
+  <object class="GtkDialog" id="power_dialog">
+    <property name="title">System Power</property>
+    <property name="modal">true</property>
+    <property name="default-width">300</property>
+    <property name="default-height">200</property>
+    
+    <child>
+      <object class="GtkBox" id="power_content_box">
+        <property name="orientation">vertical</property>
+        <property name="spacing">10</property>
+        <property name="margin-top">20</property>
+        <property name="margin-bottom">20</property>
+        <property name="margin-start">20</property>
+        <property name="margin-end">20</property>
+        
+        <child>
+          <object class="GtkLabel" id="power_message_label">
+            <property name="label">Select an option:</property>
+          </object>
+        </child>
+        
+        <child>
+          <object class="GtkButton" id="close_app_button">
+            <property name="label">Close App</property>
+            <property name="height-request">50</property>
+          </object>
+        </child>
+        
+        <child>
+          <object class="GtkButton" id="shutdown_button">
+            <property name="label">Shutdown</property>
+            <property name="height-request">50</property>
+          </object>
+        </child>
+        
+        <child>
+          <object class="GtkButton" id="restart_button">
+            <property name="label">Restart</property>
+            <property name="height-request">50</property>
+          </object>
+        </child>
+        
+        <child>
+          <object class="GtkButton" id="cancel_button">
+            <property name="label">Cancel</property>
+            <property name="height-request">50</property>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

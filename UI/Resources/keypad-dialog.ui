@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  
+  <!-- Keypad Dialog Template -->
+  <object class="GtkDialog" id="keypad_dialog">
+    <property name="title">Input Value</property>
+    <property name="modal">true</property>
+    <property name="default-width">300</property>
+    <property name="default-height">300</property>
+    
+    <child>
+      <!-- Keypad widget placeholder - custom widget implemented in C# -->
+      <object class="GtkBox" id="keypad_container">
+        <property name="orientation">vertical</property>
+      </object>
+    </child>
+  </object>
+</interface>

@@ -50,6 +50,13 @@ var config = host.Services.GetRequiredService<ControllerConfig>();
 // ============================
 var application = Application.New("motorcontroller.app", Gio.ApplicationFlags.FlagsNone);
 
+var cssProvider = Gtk.CssProvider.New();
+cssProvider.LoadFromPath("./Styles/style.css");
+
+Gtk.StyleContext.AddProviderForDisplay(
+    Gdk.Display.GetDefault()!, cssProvider, 600 // GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+);      
+
 application.OnActivate += (sender, args) =>
 {
     CreateMainWindow((Application)sender, motorController, config);

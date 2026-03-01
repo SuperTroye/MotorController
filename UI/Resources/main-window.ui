@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  
+  <!-- Main Application Window Container -->
+  <object class="GtkBox" id="main_box">
+    <property name="orientation">vertical</property>
+    <property name="spacing">10</property>
+    <property name="margin-top">20</property>
+    <property name="margin-bottom">20</property>
+    <property name="margin-start">20</property>
+    <property name="margin-end">20</property>
+    
+    <!-- Status Section -->
+    <child>
+      <object class="GtkBox" id="status_box">
+        <property name="orientation">horizontal</property>
+        <property name="spacing">20</property>
+        <property name="hexpand">true</property>
+        <property name="halign">center</property>
+        
+        <!-- Current Speed Display -->
+        <child>
+          <object class="GtkBox" id="speed_box">
+            <property name="orientation">vertical</property>
+            <property name="spacing">5</property>
+            <child>
+              <object class="GtkLabel" id="speed_title_label">
+                <property name="label">Current Speed</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel" id="speed_label">
+                <property name="label">0 RPM</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        
+        <!-- Current Position Display -->
+        <child>
+          <object class="GtkBox" id="position_box">
+            <property name="orientation">vertical</property>
+            <property name="spacing">5</property>
+            <child>
+              <object class="GtkLabel" id="position_title_label">
+                <property name="label">Current Position</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel" id="position_label">
+                <property name="label">0.00 in</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        
+        <!-- Fine Adjustment Buttons -->
+        <child>
+          <object class="GtkBox" id="fine_adjust_box">
+            <property name="orientation">vertical</property>
+            <property name="spacing">5</property>
+            <property name="halign">end</property>
+            <property name="valign">start</property>
+            <child>
+              <object class="GtkButton" id="increment_button">
+                <property name="label">?</property>
+                <property name="width-request">50</property>
+                <property name="height-request">40</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="decrement_button">
+                <property name="label">?</property>
+                <property name="width-request">50</property>
+                <property name="height-request">40</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    
+    <!-- Limit Switch Indicators -->
+    <child>
+      <object class="GtkBox" id="limit_switch_box">
+        <property name="orientation">horizontal</property>
+        <property name="spacing">20</property>
+        <property name="hexpand">true</property>
+        <property name="halign">center</property>
+        <property name="margin-top">10</property>
+        
+        <!-- Min Limit Indicator -->
+        <child>
+          <object class="GtkBox" id="min_limit_box">
+            <property name="orientation">horizontal</property>
+            <property name="spacing">10</property>
+            <child>
+              <object class="GtkLabel" id="min_limit_label">
+                <property name="label">Min Limit</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkDrawingArea" id="min_limit_indicator">
+                <property name="width-request">30</property>
+                <property name="height-request">30</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        
+        <!-- Max Limit Indicator -->
+        <child>
+          <object class="GtkBox" id="max_limit_box">
+            <property name="orientation">horizontal</property>
+            <property name="spacing">10</property>
+            <child>
+              <object class="GtkLabel" id="max_limit_label">
+                <property name="label">Max Limit</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkDrawingArea" id="max_limit_indicator">
+                <property name="width-request">30</property>
+                <property name="height-request">30</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    
+    <!-- Limit Button Controls -->
+    <child>
+      <object class="GtkBox" id="limit_button_box">
+        <property name="orientation">horizontal</property>
+        <property name="spacing">10</property>
+        <property name="hexpand">true</property>
+        <property name="halign">center</property>
+        <property name="margin-top">20</property>
+        
+        <child>
+          <object class="GtkButton" id="min_limit_button">
+            <property name="label">? Min Limit</property>
+            <property name="width-request">150</property>
+            <property name="height-request">50</property>
+          </object>
+        </child>
+        
+        <child>
+          <object class="GtkButton" id="max_limit_button">
+            <property name="label">Max Limit ?</property>
+            <property name="width-request">150</property>
+            <property name="height-request">50</property>
+          </object>
+        </child>
+      </object>
+    </child>
+    
+    <!-- Speed and Position Input Section -->
+    <child>
+      <object class="GtkBox" id="inputs_box">
+        <property name="orientation">horizontal</property>
+        <property name="spacing">20</property>
+        <property name="hexpand">true</property>
+        <property name="margin-top">20</property>
+        <property name="margin-start">20</property>
+        <property name="margin-end">20</property>
+        
+        <!-- Speed Slider Section -->
+        <child>
+          <object class="GtkBox" id="speed_input_box">
+            <property name="orientation">vertical</property>
+            <property name="spacing">5</property>
+            <property name="hexpand">true</property>
+            
+            <child>
+              <object class="GtkBox" id="speed_label_box">
+                <property name="orientation">horizontal</property>
+                <property name="spacing">10</property>
+                <property name="hexpand">true</property>
+                
+                <child>
+                  <object class="GtkLabel" id="speed_input_label">
+                    <property name="label">Speed (RPM):</property>
+                    <property name="halign">start</property>
+                  </object>
+                </child>
+                
+                <child>
+                  <object class="GtkLabel" id="speed_value_label">
+                    <property name="label">100</property>
+                    <property name="halign">end</property>
+                    <property name="hexpand">true</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            
+            <child>
+              <object class="GtkScale" id="speed_slider">
+                <property name="orientation">horizontal</property>
+                <property name="adjustment">
+                  <object class="GtkAdjustment">
+                    <property name="lower">5</property>
+                    <property name="upper">350</property>
+                    <property name="step-increment">1</property>
+                    <property name="page-increment">10</property>
+                    <property name="value">100</property>
+                  </object>
+                </property>
+                <property name="draw-value">false</property>
+                <property name="hexpand">true</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        
+        <!-- Position Entry Section -->
+        <child>
+          <object class="GtkBox" id="position_input_box">
+            <property name="orientation">vertical</property>
+            <property name="spacing">5</property>
+            <property name="halign">center</property>
+            
+            <child>
+              <object class="GtkLabel" id="position_input_label">
+                <property name="label">Position (in):</property>
+                <property name="halign">start</property>
+              </object>
+            </child>
+            
+            <child>
+              <object class="GtkEntry" id="position_entry">
+                <property name="text">0</property>
+                <property name="width-request">120</property>
+                <property name="editable">false</property>
+                <property name="can-focus">true</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    
+    <!-- Move and Stop Buttons -->
+    <child>
+      <object class="GtkBox" id="action_button_box">
+        <property name="orientation">horizontal</property>
+        <property name="spacing">10</property>
+        <property name="hexpand">true</property>
+        <property name="halign">center</property>
+        <property name="margin-top">20</property>
+        
+        <child>
+          <object class="GtkButton" id="move_button">
+            <property name="label">Move to Position</property>
+            <property name="width-request">180</property>
+            <property name="height-request">50</property>
+          </object>
+        </child>
+        
+        <child>
+          <object class="GtkButton" id="stop_button">
+            <property name="label">? STOP</property>
+            <property name="width-request">150</property>
+            <property name="height-request">50</property>
+          </object>
+        </child>
+      </object>
+    </child>
+    
+    <!-- Settings and Power Buttons -->
+    <child>
+      <object class="GtkBox" id="bottom_button_box">
+        <property name="orientation">horizontal</property>
+        <property name="spacing">10</property>
+        <property name="hexpand">true</property>
+        <property name="halign">fill</property>
+        <property name="margin-top">20</property>
+        
+        <child>
+          <object class="GtkButton" id="settings_button">
+            <property name="label">? Settings</property>
+            <property name="width-request">120</property>
+            <property name="height-request">40</property>
+            <property name="halign">start</property>
+          </object>
+        </child>
+        
+        <child>
+          <object class="GtkButton" id="power_button">
+            <property name="label">? Power</property>
+            <property name="width-request">120</property>
+            <property name="height-request">40</property>
+            <property name="halign">end</property>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
