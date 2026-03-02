@@ -253,7 +253,7 @@
                     </layout>
                     <child>
                       <object class="GtkLabel" id="threads_per_inch_label">
-                        <property name="label">&lt;small&gt;Threads/Inch:&lt;/small&gt;</property>
+                        <property name="label">Threads/Inch:</property>
                         <property name="use-markup">true</property>
                         <property name="width-request">80</property>
                         <property name="halign">start</property>
@@ -281,7 +281,7 @@
                 
                 <child>
                   <object class="GtkLabel" id="acceleration_label">
-                    <property name="label">&lt;small&gt;Acceleration (steps/sec²):&lt;/small&gt;</property>
+                    <property name="label">Acceleration (steps/sec)</property>
                     <property name="use-markup">true</property>
                     <property name="width-request">160</property>
                     <property name="halign">start</property>

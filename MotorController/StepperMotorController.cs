@@ -10,6 +10,7 @@ public class StepperMotorController : IStepperMotorController
     private readonly ControllerConfig _config;
     private readonly ILogger<StepperMotorController> _logger;
     private readonly SemaphoreSlim _positionLock = new(1, 1);
+    private readonly SemaphoreSlim _motionLock = new(1, 1);
     private CancellationTokenSource _stopTokenSource = new();
     private double _currentPositionSteps;
     private bool _disposed;
@@ -101,43 +102,58 @@ public class StepperMotorController : IStepperMotorController
         if (rpm <= 0)
             throw new ArgumentException("RPM must be greater than zero", nameof(rpm));
 
-        var totalSteps = (int)(inches * _config.LeadScrewThreadsPerInch * (int)_config.StepsPerRevolution);
-        var direction = totalSteps >= 0;
-
-        _gpio.Write(_config.DirectionPin, direction ? PinValue.Low : PinValue.High);
-
-        if (_config.EnablePin.HasValue)
-            _gpio.Write(_config.EnablePin.Value, PinValue.Low); // Enable motor
-
+        await _motionLock.WaitAsync(cancellationToken);
         try
         {
-            await ExecuteMotionAsync(Math.Abs(totalSteps), rpm, direction, cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            // Expected when motion is cancelled via StopAsync or cancellationToken
+            _stopRequested = false;
+
+            var totalSteps = (int)(inches * _config.LeadScrewThreadsPerInch * (int)_config.StepsPerRevolution);
+            var direction = totalSteps >= 0;
+
+            _gpio.Write(_config.DirectionPin, direction ? PinValue.Low : PinValue.High);
+
+            if (_config.EnablePin.HasValue)
+                _gpio.Write(_config.EnablePin.Value, PinValue.Low); // Enable motor
+
+            try
+            {
+                await ExecuteMotionAsync(Math.Abs(totalSteps), rpm, direction, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when motion is cancelled via StopAsync or cancellationToken
+            }
+            finally
+            {
+                if (_config.EnablePin.HasValue)
+                    _gpio.Write(_config.EnablePin.Value, PinValue.High); // Disable motor
+            }
         }
         finally
         {
-            if (_config.EnablePin.HasValue)
-                _gpio.Write(_config.EnablePin.Value, PinValue.High); // Disable motor
+            _motionLock.Release();
         }
     }
 
-    public Task RunToLimitSwitchAsync(LimitSwitch direction, double rpm, CancellationToken cancellationToken = default)
+    public async Task RunToLimitSwitchAsync(LimitSwitch direction, double rpm, CancellationToken cancellationToken = default)
     {
         if (rpm <= 0)
             throw new ArgumentException("RPM must be greater than zero", nameof(rpm));
 
-        Interlocked.Exchange(ref _targetRpm, rpm); // Initialize target RPM
+        await _motionLock.WaitAsync(cancellationToken);
+        try
+        {
+            _stopRequested = false;
 
-        bool toMaxLimit = direction == LimitSwitch.Max;
-        _gpio.Write(_config.DirectionPin, toMaxLimit ? PinValue.Low : PinValue.High);
+            Interlocked.Exchange(ref _targetRpm, rpm); // Initialize target RPM
 
-        if (_config.EnablePin.HasValue)
-            _gpio.Write(_config.EnablePin.Value, PinValue.Low); // Enable motor
+            bool toMaxLimit = direction == LimitSwitch.Max;
+            _gpio.Write(_config.DirectionPin, toMaxLimit ? PinValue.Low : PinValue.High);
 
-        return Task.Run(async () =>
+            if (_config.EnablePin.HasValue)
+                _gpio.Write(_config.EnablePin.Value, PinValue.Low); // Enable motor
+
+            await Task.Run(async () =>
         {
             try
             {
@@ -258,7 +274,12 @@ public class StepperMotorController : IStepperMotorController
                 if (_config.EnablePin.HasValue)
                     _gpio.Write(_config.EnablePin.Value, PinValue.High); // Disable motor
             }
-        });
+            });
+        }
+        finally
+        {
+            _motionLock.Release();
+        }
     }
 
     public async Task StopAsync()
@@ -357,12 +378,12 @@ public class StepperMotorController : IStepperMotorController
             decelerationSteps = steps - accelerationSteps;
         }
 
-        Debug.WriteLine($"Total Steps: {steps}");
-        Debug.WriteLine($"Max steps/second: {maxStepsPerSecond:n2}");
-        Debug.WriteLine($"Accel Steps: {accelerationSteps}");
-        Debug.WriteLine($"Decel Steps: {decelerationSteps}");
-        Debug.WriteLine($"Initial Delay us: {initialDelayMicroseconds}");
-        Debug.WriteLine($"Target Delay us: {targetDelayMicroseconds}");
+        _logger.LogDebug($"Total Steps: {steps}");
+        _logger.LogDebug($"Max steps/second: {maxStepsPerSecond:n2}");
+        _logger.LogDebug($"Accel Steps: {accelerationSteps}");
+        _logger.LogDebug($"Decel Steps: {decelerationSteps}");
+        _logger.LogDebug($"Initial Delay us: {initialDelayMicroseconds}");
+        _logger.LogDebug($"Target Delay us: {targetDelayMicroseconds}");
 
         return Task.Run(async () =>
         {
@@ -439,7 +460,7 @@ public class StepperMotorController : IStepperMotorController
                     delayMicroseconds = targetDelayMicroseconds;
                 }
 
-                //Debug.WriteLine($"Delay us: {delayMicroseconds}");
+                _logger.LogDebug($"Delay us: {delayMicroseconds}");
 
                 _gpio.Write(_config.PulsePin, PinValue.High);
                 MicrosecondSleep((int)delayMicroseconds / 2);
@@ -470,6 +491,7 @@ public class StepperMotorController : IStepperMotorController
         _stopTokenSource?.Cancel();
         _stopTokenSource?.Dispose();
         _positionLock?.Dispose();
+        _motionLock?.Dispose();
 
         _gpio?.Dispose();
 
