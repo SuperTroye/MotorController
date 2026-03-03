@@ -1,0 +1,492 @@
+﻿using System.Device.Gpio;
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+
+namespace MotorControllerApp;
+
+public class StepperMotorController : IStepperMotorController
+{
+    private readonly IGpioController _gpio;
+    private readonly ControllerConfig _config;
+    private readonly ILogger<StepperMotorController> _logger;
+    private readonly SemaphoreSlim _positionLock = new(1, 1);
+    private readonly SemaphoreSlim _motionLock = new(1, 1);
+    private CancellationTokenSource _stopTokenSource = new();
+    private double _currentPositionSteps;
+    private bool _disposed;
+    private volatile bool _stopRequested;
+    private double _targetRpm;
+
+    public double CurrentPositionInches
+    {
+        get
+        {
+            _positionLock.Wait();
+            try
+            {
+                return _currentPositionSteps / (int)_config.StepsPerRevolution / _config.LeadScrewThreadsPerInch;
+            }
+            finally
+            {
+                _positionLock.Release();
+            }
+        }
+    }
+
+    public bool IsMinLimitSwitchTriggered { get; private set; }
+    public bool IsMaxLimitSwitchTriggered { get; private set; }
+
+    public event EventHandler? MinLimitSwitchTriggered;
+    public event EventHandler? MaxLimitSwitchTriggered;
+
+    public StepperMotorController(IGpioController gpio, ControllerConfig config, ILogger<StepperMotorController> logger)
+    {
+        _gpio = gpio ?? throw new ArgumentNullException(nameof(gpio));
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+        _logger.LogInformation("Initializing StepperMotorController with config: PulsePin={PulsePin}, DirectionPin={DirectionPin}, EnablePin={EnablePin}, MinLimitSwitchPin={MinLimitSwitchPin}, MaxLimitSwitchPin={MaxLimitSwitchPin}, StepsPerRevolution={StepsPerRevolution}, LeadScrewThreadsPerInch={LeadScrewThreadsPerInch}, Acceleration={Acceleration}",
+            _config.PulsePin, _config.DirectionPin, _config.EnablePin, _config.MinLimitSwitchPin, _config.MaxLimitSwitchPin, _config.StepsPerRevolution, _config.LeadScrewThreadsPerInch, _config.Acceleration);
+
+        InitializePins();
+    }
+
+    private void InitializePins()
+    {
+        // Close pins if already open (cleanup from previous runs)
+        if (_gpio.IsPinOpen(_config.PulsePin)) _gpio.ClosePin(_config.PulsePin);
+        if (_gpio.IsPinOpen(_config.DirectionPin)) _gpio.ClosePin(_config.DirectionPin);
+        if (_config.EnablePin.HasValue && _gpio.IsPinOpen(_config.EnablePin.Value)) _gpio.ClosePin(_config.EnablePin.Value);
+        if (_gpio.IsPinOpen(_config.MinLimitSwitchPin)) _gpio.ClosePin(_config.MinLimitSwitchPin);
+        if (_gpio.IsPinOpen(_config.MaxLimitSwitchPin)) _gpio.ClosePin(_config.MaxLimitSwitchPin);
+
+        // Initialize output pins
+        _gpio.OpenPin(_config.PulsePin, PinMode.Output);
+        _gpio.OpenPin(_config.DirectionPin, PinMode.Output);
+
+        if (_config.EnablePin.HasValue)
+        {
+            _gpio.OpenPin(_config.EnablePin.Value, PinMode.Output);
+            _gpio.Write(_config.EnablePin.Value, PinValue.High); // Disabled by default
+        }
+
+        // Initialize limit switch pins 
+        _gpio.OpenPin(_config.MinLimitSwitchPin, PinMode.Input);
+        _gpio.OpenPin(_config.MaxLimitSwitchPin, PinMode.Input);
+
+        // Register callbacks for limit switches
+        _gpio.RegisterCallbackForPinValueChangedEvent(_config.MinLimitSwitchPin, PinEventTypes.Falling | PinEventTypes.Rising, OnMinLimitSwitchChanged);
+        _gpio.RegisterCallbackForPinValueChangedEvent(_config.MaxLimitSwitchPin, PinEventTypes.Falling | PinEventTypes.Rising, OnMaxLimitSwitchChanged);
+
+        // Read initial limit switch states
+        IsMinLimitSwitchTriggered = _gpio.Read(_config.MinLimitSwitchPin) == PinValue.Low;
+        IsMaxLimitSwitchTriggered = _gpio.Read(_config.MaxLimitSwitchPin) == PinValue.Low;
+    }
+
+    private void OnMinLimitSwitchChanged(object sender, PinValueChangedEventArgs e)
+    {
+        IsMinLimitSwitchTriggered = e.ChangeType == PinEventTypes.Falling;
+        _logger.LogInformation("Min limit switch {Status} (Pin {Pin})", IsMinLimitSwitchTriggered ? "triggered" : "released", _config.MinLimitSwitchPin);
+        MinLimitSwitchTriggered?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnMaxLimitSwitchChanged(object sender, PinValueChangedEventArgs e)
+    {
+        IsMaxLimitSwitchTriggered = e.ChangeType == PinEventTypes.Falling;
+        _logger.LogInformation("Max limit switch {Status} (Pin {Pin})", IsMaxLimitSwitchTriggered ? "triggered" : "released", _config.MaxLimitSwitchPin);
+        MaxLimitSwitchTriggered?.Invoke(this, EventArgs.Empty);
+    }
+
+    public async Task MoveInchesAsync(double inches, double rpm, CancellationToken cancellationToken = default)
+    {
+        if (rpm <= 0)
+            throw new ArgumentException("RPM must be greater than zero", nameof(rpm));
+
+        await _motionLock.WaitAsync(cancellationToken);
+        try
+        {
+            _stopRequested = false;
+
+            var totalSteps = (int)(inches * _config.LeadScrewThreadsPerInch * (int)_config.StepsPerRevolution);
+            var direction = totalSteps >= 0;
+
+            _gpio.Write(_config.DirectionPin, direction ? PinValue.Low : PinValue.High);
+
+            if (_config.EnablePin.HasValue)
+                _gpio.Write(_config.EnablePin.Value, PinValue.Low); // Enable motor
+
+            try
+            {
+                await ExecuteMotionAsync(Math.Abs(totalSteps), rpm, direction, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when motion is cancelled via StopAsync or cancellationToken
+            }
+            finally
+            {
+                if (_config.EnablePin.HasValue)
+                    _gpio.Write(_config.EnablePin.Value, PinValue.High); // Disable motor
+            }
+        }
+        finally
+        {
+            _motionLock.Release();
+        }
+    }
+
+    public async Task RunToLimitSwitchAsync(LimitSwitch direction, double rpm, CancellationToken cancellationToken = default)
+    {
+        if (rpm <= 0)
+            throw new ArgumentException("RPM must be greater than zero", nameof(rpm));
+
+        await _motionLock.WaitAsync(cancellationToken);
+        try
+        {
+            _stopRequested = false;
+
+            bool toMaxLimit = direction == LimitSwitch.Max;
+            _gpio.Write(_config.DirectionPin, toMaxLimit ? PinValue.Low : PinValue.High);
+
+            if (_config.EnablePin.HasValue)
+                _gpio.Write(_config.EnablePin.Value, PinValue.Low); // Enable motor
+
+            try
+            {
+                await ExecuteMotionInternalAsync(
+                    direction: toMaxLimit,
+                    initialRpm: rpm,
+                    maxSteps: null, // Run indefinitely until limit switch
+                    shouldStartDeceleration: (step, accelSteps) =>
+                    {
+                        // Only check after acceleration phase
+                        if (step < accelSteps)
+                            return false;
+
+                        return toMaxLimit ? IsMaxLimitSwitchTriggered : IsMinLimitSwitchTriggered;
+                    },
+                    maxDecelerationSteps: 300, // Limit deceleration for limit switch moves
+                    cancellationToken: cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when stopped
+            }
+            finally
+            {
+                if (_config.EnablePin.HasValue)
+                    _gpio.Write(_config.EnablePin.Value, PinValue.High); // Disable motor
+            }
+        }
+        finally
+        {
+            _motionLock.Release();
+        }
+    }
+
+    public async Task StopAsync()
+    {
+        _stopRequested = true;
+        await Task.CompletedTask;
+    }
+
+
+    /// <summary>
+    /// Sets the target speed in revolutions per minute (RPM) while the motor is running.
+    /// </summary>
+    /// <remarks>
+    /// This method allows dynamic speed adjustment during motion. The motor will smoothly transition
+    /// to the new speed by recalculating the pulse timing. The new RPM will be applied during the
+    /// constant speed phase of motion. Changes are ignored if RPM is zero or negative.
+    /// </remarks>
+    /// <param name="rpm">The target speed in revolutions per minute. Must be greater than zero.</param>
+    public void SetTargetSpeed(double rpm)
+    {
+        if (rpm <= 0)
+        {
+            _logger.LogWarning("SetTargetRpm called with invalid RPM value: {Rpm}. Ignoring.", rpm);
+            return;
+        }
+
+        Interlocked.Exchange(ref _targetRpm, rpm);
+        _logger.LogInformation("Target RPM updated to {Rpm}", rpm);
+    }
+
+    public async Task ResetPositionAsync()
+    {
+        await _positionLock.WaitAsync();
+        try
+        {
+            _currentPositionSteps = 0;
+        }
+        finally
+        {
+            _positionLock.Release();
+        }
+    }
+
+
+    private void MicrosecondSleep(int microseconds)
+    {
+        // Get the frequency of the stopwatch (ticks per second)
+        double stopwatchFrequency = Stopwatch.Frequency;
+
+        // Calculate the number of ticks required for the desired delay
+        long ticks = (long)(microseconds * (stopwatchFrequency / 1_000_000));
+
+        // Get the start timestamp
+        long start = Stopwatch.GetTimestamp();
+
+        // Wait in a tight loop until the required ticks have elapsed
+        while (Stopwatch.GetTimestamp() - start < ticks)
+        {
+            // Optional: use Thread.SpinWait to prevent the OS from unnecessarily
+            // context switching for very short waits (e.g., < 40ns)
+            // Thread.SpinWait(1); 
+        }
+    }
+
+
+    /// <summary>
+    /// Executes a motion sequence by generating step pulses with acceleration and deceleration profiles at the
+    /// specified speed.
+    /// </summary>
+    /// <remarks>The motion sequence accelerates at the beginning, maintains a constant speed, and then
+    /// decelerates before stopping. The operation can be cancelled at any time via the provided cancellation token or
+    /// an internal stop request. If cancellation is requested, the motion will stop as soon as possible.</remarks>
+    /// <param name="steps">The total number of steps to move. Must be a non-negative integer.</param>
+    /// <param name="rpm">The target speed in revolutions per minute. Must be greater than zero.</param>
+    /// <param name="direction">The direction of movement. True for forward/max, false for reverse/min.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the motion operation.</param>
+    /// <returns>A task that represents the asynchronous operation of executing the motion sequence.</returns>
+    internal Task ExecuteMotionAsync(int steps, double rpm, bool direction, CancellationToken cancellationToken)
+    {
+        return ExecuteMotionInternalAsync(
+            direction: direction,
+            initialRpm: rpm,
+            maxSteps: steps,
+            shouldStartDeceleration: (step, accelSteps) => false, // Deceleration based on remaining steps
+            maxDecelerationSteps: null,
+            cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// Internal unified motion execution engine with acceleration/deceleration profiles.
+    /// </summary>
+    /// <param name="direction">The direction of movement. True for forward/max, false for reverse/min.</param>
+    /// <param name="initialRpm">Initial target speed in RPM.</param>
+    /// <param name="maxSteps">Maximum steps to execute. Null means run indefinitely until shouldStartDeceleration triggers.</param>
+    /// <param name="shouldStartDeceleration">Function called each step to determine if deceleration should begin. Returns true to start decel.</param>
+    /// <param name="maxDecelerationSteps">Optional limit on deceleration steps (e.g., 300 for limit switch moves).</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    private Task ExecuteMotionInternalAsync(
+        bool direction,
+        double initialRpm,
+        int? maxSteps,
+        Func<int, int, bool> shouldStartDeceleration,
+        int? maxDecelerationSteps,
+        CancellationToken cancellationToken)
+    {
+        Interlocked.Exchange(ref _targetRpm, initialRpm); // Initialize target RPM
+        var currentRpm = Interlocked.CompareExchange(ref _targetRpm, 0, 0); // Thread-safe read
+        var maxStepsPerSecond = (currentRpm * (int)_config.StepsPerRevolution) / 60.0;
+        var targetDelayMicroseconds = 1000000.0 / maxStepsPerSecond;
+
+        // Initial delay using David Austin algorithm: c0 = 0.676 * sqrt(2/α) * 10^6
+        var initialDelayMicroseconds = 0.676 * Math.Sqrt(2.0 / _config.Acceleration) * 1000000.0;
+
+        // Calculate acceleration steps needed to reach target speed
+        var accelerationSteps = (int)((maxStepsPerSecond * maxStepsPerSecond) / (2.0 * _config.Acceleration));
+        var decelerationSteps = accelerationSteps;
+
+        // Apply max deceleration limit if specified (for limit switch moves)
+        if (maxDecelerationSteps.HasValue)
+            decelerationSteps = Math.Min(decelerationSteps, maxDecelerationSteps.Value);
+
+        // Adjust if motion is too short for full acceleration/deceleration (only for fixed-step moves)
+        if (maxSteps.HasValue && accelerationSteps + decelerationSteps > maxSteps.Value)
+        {
+            accelerationSteps = maxSteps.Value / 2;
+            decelerationSteps = maxSteps.Value - accelerationSteps;
+        }
+
+        if (maxSteps.HasValue)
+        {
+            _logger.LogDebug($"Total Steps: {maxSteps.Value}");
+            _logger.LogDebug($"Max steps/second: {maxStepsPerSecond:n2}");
+            _logger.LogDebug($"Accel Steps: {accelerationSteps}");
+            _logger.LogDebug($"Decel Steps: {decelerationSteps}");
+            _logger.LogDebug($"Initial Delay us: {initialDelayMicroseconds}");
+            _logger.LogDebug($"Target Delay us: {targetDelayMicroseconds}");
+        }
+
+        return Task.Run(async () =>
+        {
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stopTokenSource.Token);
+
+            double delayMicroseconds = initialDelayMicroseconds;
+            bool stopRequested = false;
+            bool externalDecelTrigger = false;
+            int decelStepCounter = 0;
+            int step = 0;
+
+            while (true)
+            {
+                // Check for hard cancellation (emergency stop) - throw immediately without deceleration
+                if (linkedCts.Token.IsCancellationRequested)
+                    linkedCts.Token.ThrowIfCancellationRequested();
+
+                // For fixed-step moves, check if we've completed all steps
+                if (maxSteps.HasValue && step >= maxSteps.Value)
+                    break;
+
+                // Check if RPM changed and update timing if in constant speed phase
+                if (!externalDecelTrigger && !stopRequested && step >= accelerationSteps)
+                {
+                    var latestRpm = Interlocked.CompareExchange(ref _targetRpm, 0, 0); // Thread-safe read
+                    if (Math.Abs(currentRpm - latestRpm) > 0.01)
+                    {
+                        currentRpm = latestRpm;
+                        maxStepsPerSecond = (currentRpm * (int)_config.StepsPerRevolution) / 60.0;
+                        targetDelayMicroseconds = 1000000.0 / maxStepsPerSecond;
+                        
+                        // Recalculate deceleration steps for new speed
+                        var newAccelerationSteps = (int)((maxStepsPerSecond * maxStepsPerSecond) / (2.0 * _config.Acceleration));
+                        var newDecelerationSteps = newAccelerationSteps;
+
+                        // Apply max deceleration limit if specified
+                        if (maxDecelerationSteps.HasValue)
+                            newDecelerationSteps = Math.Min(newDecelerationSteps, maxDecelerationSteps.Value);
+                        
+                        // For fixed-step moves, adjust deceleration if not enough steps remaining
+                        if (maxSteps.HasValue)
+                        {
+                            var stepsRemaining = maxSteps.Value - step;
+                            if (newDecelerationSteps < stepsRemaining)
+                            {
+                                decelerationSteps = newDecelerationSteps;
+                            }
+                            else
+                            {
+                                // Not enough room for full deceleration, adjust to fit
+                                decelerationSteps = Math.Max(1, stepsRemaining / 2);
+                            }
+                            
+                            _logger.LogInformation("Speed changed to {Rpm} RPM during motion (step {Step}/{TotalSteps}, decel steps: {DecelSteps})", 
+                                currentRpm, step, maxSteps.Value, decelerationSteps);
+                        }
+                        else
+                        {
+                            // For infinite moves (limit switch), just update deceleration steps
+                            decelerationSteps = newDecelerationSteps;
+                            _logger.LogInformation("Speed changed to {Rpm} RPM during motion (decel steps: {DecelSteps})", currentRpm, decelerationSteps);
+                        }
+                    }
+                }
+
+                // Check if stop was requested
+                if (!stopRequested && _stopRequested)
+                {
+                    stopRequested = true;
+                    
+                    // Dynamically calculate deceleration steps based on current motion phase
+                    if (step < accelerationSteps)
+                    {
+                        // Still accelerating - decelerate for the same number of steps we've accelerated
+                        decelerationSteps = Math.Max(1, step);
+                        _logger.LogInformation("Stop requested during acceleration at step {Step}. Will decelerate for {DecelSteps} steps.", step, decelerationSteps);
+                    }
+                    else
+                    {
+                        // In constant speed phase - use calculated deceleration steps (possibly limited by maxDecelerationSteps)
+                        _logger.LogInformation("Stop requested during constant speed. Will decelerate for {DecelSteps} steps.", decelerationSteps);
+                    }
+                }
+
+                // Check for external deceleration trigger (e.g., limit switch)
+                if (!externalDecelTrigger && !stopRequested && shouldStartDeceleration(step, accelerationSteps))
+                {
+                    externalDecelTrigger = true;
+                }
+
+                // If decelerating and reached the end, stop
+                if (externalDecelTrigger || stopRequested)
+                {
+                    if (decelStepCounter >= decelerationSteps)
+                        break;
+
+                    // Deceleration phase - mirror the acceleration ramp
+                    int decelStep = decelerationSteps - decelStepCounter;
+                    if (decelStep > 0)
+                    {
+                        delayMicroseconds = delayMicroseconds + ((2.0 * delayMicroseconds) / ((4.0 * decelStep) - 1.0));
+                    }
+                    decelStepCounter++;
+                }
+                // Acceleration phase - David Austin algorithm: cn = cn-1 - (2 * cn-1) / (4n + 1)
+                else if (step < accelerationSteps)
+                {
+                    if (step > 0)
+                    {
+                        delayMicroseconds = delayMicroseconds - ((2.0 * delayMicroseconds) / ((4.0 * step) + 1.0));
+                    }
+                }
+                // Constant speed phase - maintain target speed (or handle planned deceleration for fixed-step moves)
+                else
+                {
+                    // For fixed-step moves, check if we should enter planned deceleration
+                    if (maxSteps.HasValue && step >= maxSteps.Value - decelerationSteps)
+                    {
+                        // Start planned deceleration
+                        int decelStep = maxSteps.Value - step;
+                        if (decelStep > 0)
+                        {
+                            delayMicroseconds = delayMicroseconds + ((2.0 * delayMicroseconds) / ((4.0 * decelStep) - 1.0));
+                        }
+                    }
+                    else
+                    {
+                        delayMicroseconds = targetDelayMicroseconds;
+                    }
+                }
+
+                _logger.LogDebug($"Delay us: {delayMicroseconds}");
+
+                _gpio.Write(_config.PulsePin, PinValue.High);
+                MicrosecondSleep((int)delayMicroseconds / 2);
+
+                _gpio.Write(_config.PulsePin, PinValue.Low);
+                MicrosecondSleep((int)delayMicroseconds / 2);
+
+                await _positionLock.WaitAsync(linkedCts.Token);
+                try
+                {
+                    _currentPositionSteps += direction ? 1 : -1;
+                }
+                finally
+                {
+                    _positionLock.Release();
+                }
+
+                step++;
+            }
+
+            _stopRequested = false;
+        });
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _stopTokenSource?.Cancel();
+        _stopTokenSource?.Dispose();
+        _positionLock?.Dispose();
+        _motionLock?.Dispose();
+
+        _gpio?.Dispose();
+
+        _disposed = true;
+    }
+}
