@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<!DOCTYPE cambalache-project SYSTEM "cambalache-project.dtd">
+<!-- Created with Cambalache 0.96.3 -->
+<cambalache-project version="0.96.0" target_tk="gtk-4.0">
+  <ui filename="main-window.ui" sha256="0d1bb60d0cfeefcb802bc89af6efc090c849170e191396fc8e7f311534d1942f"/>
+  <ui filename="settings-dialog.ui" sha256="5c0cd3548be0354eee0836a3aa72cdcaa94c04c56b38be814aea8d6168de920d"/>
+  <ui filename="keypad-dialog.ui" sha256="8bf92f31326b3aa5480ad64240e12952841f5ea147642fc74444f97400b282a0"/>
+  <ui filename="error-dialog.ui" sha256="5970178dbab111684aa97f3a63aedfa86f9b69c595f5aff4469b6178c2cc456b"/>
+</cambalache-project>

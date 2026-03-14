@@ -1,0 +1,120 @@
+﻿
+
+/* ============= WINDOW ============== */
+window {
+
+}
+
+/* ============= LABELS ============== */
+label {
+
+}
+
+
+/* ============= BUTTONS ============= */
+button {
+
+}
+
+button:hover {
+
+}
+
+button:active {
+
+}
+
+button:disabled {
+
+}
+
+
+/* ============= ENTRY FIELDS ============= */
+entry {
+
+}
+
+entry:focus {
+
+}
+
+entry:disabled {
+
+}
+
+entry text {
+
+}
+
+entry selection {
+
+}
+
+
+/* ============= SCALE (SLIDER) ============= */
+scale {
+
+}
+
+scale trough {
+
+}
+
+scale highlight {
+
+}
+
+scale slider {
+
+}
+
+scale slider:hover {
+
+}
+
+scale slider:active {
+
+}
+
+
+/* ============= DIALOG ============= */
+dialog {
+
+}
+
+dialog > box {
+
+}
+
+
+/* ============= DROPDOWN ============= */
+dropdown {
+
+}
+
+dropdown:hover {
+
+}
+
+dropdown button {
+
+}
+
+dropdown popover {
+
+}
+
+
+
+scrollbar slider {
+
+}
+
+scrollbar slider:hover {
+
+}
+
+scrollbar slider:active {
+
+}
+
