@@ -26,7 +26,7 @@ public class SynchronizedDualAxisConfig
     /// set this value to 2.0. The controller will automatically synchronize the rotary motor's
     /// step timing to maintain this ratio throughout acceleration, constant speed, and deceleration phases.
     /// </remarks>
-    public double GearRatio { get; set; } = 1.0;
+    public double GearRatio { get; set; } = 2.0;
 }
 
 
