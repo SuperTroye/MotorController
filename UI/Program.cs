@@ -21,8 +21,8 @@ builder.ConfigureServices((ctx, services) =>
     else // Windows, Linux dev machines, macOS — use simulation
         services.AddSingleton<IGpioController, FakeGpioController>();
 
-    services.Configure<ControllerConfig>(ctx.Configuration.GetSection("ControllerConfig"));
-    services.AddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<ControllerConfig>>().Value);
+    services.Configure<LinearAxisConfig>(ctx.Configuration.GetSection("LinearAxisConfig"));
+    services.AddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<LinearAxisConfig>>().Value);
 
     services.AddSingleton<IStepperMotorController, StepperMotorController>();
 
@@ -43,7 +43,7 @@ builder.ConfigureServices((ctx, services) =>
 using var host = builder.Build();
 
 using var motorController = host.Services.GetRequiredService<IStepperMotorController>();
-var config = host.Services.GetRequiredService<ControllerConfig>();
+var config = host.Services.GetRequiredService<LinearAxisConfig>();
 
 // ============================
 // Create and run application
@@ -80,7 +80,7 @@ static bool IsRaspberryPi()
 }
 
 // Create main window
-static void CreateMainWindow(Application app, IStepperMotorController motorController, ControllerConfig config)
+static void CreateMainWindow(Application app, IStepperMotorController motorController, LinearAxisConfig config)
 {
     var window = ApplicationWindow.New(app);
     window.SetDecorated(true);

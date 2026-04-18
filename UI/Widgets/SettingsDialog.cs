@@ -6,10 +6,10 @@ namespace Widgets;
 public class SettingsDialog
 {
     private readonly Window _parentWindow;
-    private readonly ControllerConfig _config;
+    private readonly LinearAxisConfig _config;
     private readonly Dialog _dialog;
 
-    public SettingsDialog(Window parentWindow, ControllerConfig config)
+    public SettingsDialog(Window parentWindow, LinearAxisConfig config)
     {
         _parentWindow = parentWindow;
         _config = config;

@@ -9,7 +9,7 @@ public class MotorControlUI
 {
     private readonly ApplicationWindow _window;
     private readonly IStepperMotorController _motorController;
-    private readonly ControllerConfig _config;
+    private readonly LinearAxisConfig _config;
     private readonly Label _speedLabel;
     private readonly Label _positionLabel;
     private readonly Scale _speedSlider;
@@ -32,7 +32,7 @@ public class MotorControlUI
     public MotorControlUI(
         ApplicationWindow window,
         IStepperMotorController motorController,
-        ControllerConfig config)
+        LinearAxisConfig config)
     {
         _window = window;
         _motorController = motorController;

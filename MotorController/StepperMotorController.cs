@@ -7,7 +7,7 @@ namespace MotorControllerApp;
 public class StepperMotorController : IStepperMotorController
 {
     private readonly IGpioController _gpio;
-    private readonly ControllerConfig _config;
+    private readonly LinearAxisConfig _config;
     private readonly ILogger<StepperMotorController> _logger;
     private readonly SemaphoreSlim _positionLock = new(1, 1);
     private readonly SemaphoreSlim _motionLock = new(1, 1);
@@ -39,7 +39,7 @@ public class StepperMotorController : IStepperMotorController
     public event EventHandler? MinLimitSwitchTriggered;
     public event EventHandler? MaxLimitSwitchTriggered;
 
-    public StepperMotorController(IGpioController gpio, ControllerConfig config, ILogger<StepperMotorController> logger)
+    public StepperMotorController(IGpioController gpio, LinearAxisConfig config, ILogger<StepperMotorController> logger)
     {
         _gpio = gpio ?? throw new ArgumentNullException(nameof(gpio));
         _config = config ?? throw new ArgumentNullException(nameof(config));

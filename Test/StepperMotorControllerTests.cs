@@ -9,7 +9,7 @@ namespace MotorController.Tests;
 public class StepperMotorControllerTests : IDisposable
 {
     private readonly IGpioController _mockGpio;
-    private readonly ControllerConfig _config;
+    private readonly LinearAxisConfig _config;
     private readonly ILogger<StepperMotorController> _mockLogger;
     private readonly StepperMotorController _controller;
 
@@ -17,7 +17,7 @@ public class StepperMotorControllerTests : IDisposable
     {
         _mockGpio = Substitute.For<IGpioController>();
         _mockLogger = Substitute.For<ILogger<StepperMotorController>>();
-        _config = new ControllerConfig
+        _config = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -96,7 +96,7 @@ public class StepperMotorControllerTests : IDisposable
     public void Constructor_ShouldInitializeEnablePin_WhenConfigured()
     {
         // Arrange
-        var configWithEnable = new ControllerConfig
+        var configWithEnable = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -225,7 +225,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task MoveInchesAsync_ShouldEnableMotor_WhenEnablePinConfigured()
     {
         // Arrange
-        var configWithEnable = new ControllerConfig
+        var configWithEnable = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -264,7 +264,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task MoveInchesAsync_ShouldUpdatePosition_AfterMove()
     {
         // Arrange
-        var shortConfig = new ControllerConfig
+        var shortConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -382,7 +382,7 @@ public class StepperMotorControllerTests : IDisposable
     {
         // Arrange
         var mockGpio = Substitute.For<IGpioController>();
-        var testConfig = new ControllerConfig
+        var testConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -530,7 +530,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task ResetPositionAsync_ShouldSetPositionToZero()
     {
         // Arrange - Move to a non-zero position first
-        var shortConfig = new ControllerConfig
+        var shortConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -594,7 +594,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task CompleteWorkflow_ShouldWorkCorrectly()
     {
         // Arrange
-        var shortConfig = new ControllerConfig
+        var shortConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -634,7 +634,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task ExecuteMotionAsync_ShouldCalculateCorrectAccelerationSteps()
     {
         // Arrange
-        var testConfig = new ControllerConfig
+        var testConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -669,7 +669,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task ExecuteMotionAsync_ShouldCalculateCorrectInitialDelay()
     {
         // Arrange
-        var testConfig = new ControllerConfig
+        var testConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -698,7 +698,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task ExecuteMotionAsync_ShouldUseCorrectDelayFormula()
     {
         // Arrange
-        var testConfig = new ControllerConfig
+        var testConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -726,7 +726,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task ExecuteMotionAsync_ShouldHandleShortMoves()
     {
         // Arrange - Create config where accel+decel would exceed total steps
-        var testConfig = new ControllerConfig
+        var testConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -763,7 +763,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task ExecuteMotionAsync_ShouldReachTargetSpeed()
     {
         // Arrange
-        var testConfig = new ControllerConfig
+        var testConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -794,7 +794,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task ExecuteMotionAsync_ShouldSymmetricallyAccelerateAndDecelerate()
     {
         // Arrange
-        var testConfig = new ControllerConfig
+        var testConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -827,7 +827,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task ExecuteMotionAsync_ShouldCalculateDecelerationCorrectly()
     {
         // Arrange
-        var testConfig = new ControllerConfig
+        var testConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -859,7 +859,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task ExecuteMotionAsync_ShouldCalculateCorrectlyForDifferentConfigurations(double rpm, StepsPerRevolution stepsPerRev)
     {
         // Arrange
-        var testConfig = new ControllerConfig
+        var testConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -960,7 +960,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task SetTargetRpm_ShouldChangeSpeedDuringMotion()
     {
         // Arrange - Create a config with high acceleration for faster test
-        var testConfig = new ControllerConfig
+        var testConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -999,7 +999,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task SetTargetRpm_ShouldRecalculateDecelerationSteps()
     {
         // Arrange
-        var testConfig = new ControllerConfig
+        var testConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -1044,7 +1044,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task SetTargetRpm_ShouldNotAffectAccelerationPhase()
     {
         // Arrange - Very short motion so most of it is acceleration/deceleration
-        var testConfig = new ControllerConfig
+        var testConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -1128,7 +1128,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task SetTargetRpm_ShouldBeThreadSafe()
     {
         // Arrange
-        var testConfig = new ControllerConfig
+        var testConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
@@ -1163,7 +1163,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task SetTargetRpm_ShouldHandleMultipleSpeedChanges()
     {
         // Arrange
-        var testConfig = new ControllerConfig
+        var testConfig = new LinearAxisConfig
         {
             PulsePin = 21,
             DirectionPin = 20,
