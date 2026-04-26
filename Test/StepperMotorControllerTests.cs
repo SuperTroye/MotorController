@@ -1217,3 +1217,453 @@ public class StepperMotorControllerTests : IDisposable
 
     #endregion
 }
+
+public class SynchronizedDualAxisControllerTests : IDisposable
+{
+    private readonly IGpioController _mockGpio;
+    private readonly SynchronizedDualAxisConfig _config;
+    private readonly ILogger<SynchronizedDualAxisController> _mockLogger;
+    private readonly SynchronizedDualAxisController _controller;
+
+    public SynchronizedDualAxisControllerTests()
+    {
+        _mockGpio = Substitute.For<IGpioController>();
+        _mockLogger = Substitute.For<ILogger<SynchronizedDualAxisController>>();
+
+        _config = new SynchronizedDualAxisConfig
+        {
+            LinearAxisConfig = new LinearAxisConfig
+            {
+                PulsePin = 21,
+                DirectionPin = 20,
+                MinLimitSwitchPin = 24,
+                MaxLimitSwitchPin = 23,
+                StepsPerRevolution = StepsPerRevolution.SPR_400,
+                LeadScrewThreadsPerInch = 5.0,
+                Acceleration = 5000.0
+            },
+            RotaryAxisConfig = new RotaryAxisConfig
+            {
+                PulsePin = 16,
+                DirectionPin = 12,
+                StepsPerRevolution = StepsPerRevolution.SPR_400
+            },
+            GearRatio = 1.0 // 1:1 simplifies pulse-count assertions
+        };
+
+        _mockGpio.Read(_config.LinearAxisConfig.MinLimitSwitchPin).Returns(PinValue.High);
+        _mockGpio.Read(_config.LinearAxisConfig.MaxLimitSwitchPin).Returns(PinValue.High);
+
+        _controller = new SynchronizedDualAxisController(_mockGpio, _config, _mockLogger);
+    }
+
+    public void Dispose() => _controller?.Dispose();
+
+    // -----------------------------------------------------------------------
+    // Constructor
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Constructor_ShouldThrowArgumentNullException_WhenGpioIsNull()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            new SynchronizedDualAxisController(null!, _config, _mockLogger));
+    }
+
+    [Fact]
+    public void Constructor_ShouldThrowArgumentNullException_WhenConfigIsNull()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            new SynchronizedDualAxisController(_mockGpio, null!, _mockLogger));
+    }
+
+    [Fact]
+    public void Constructor_ShouldOpenLinearAxisPins()
+    {
+        var lin = _config.LinearAxisConfig;
+        _mockGpio.Received(1).OpenPin(lin.PulsePin, PinMode.Output);
+        _mockGpio.Received(1).OpenPin(lin.DirectionPin, PinMode.Output);
+        _mockGpio.Received(1).OpenPin(lin.MinLimitSwitchPin, PinMode.Input);
+        _mockGpio.Received(1).OpenPin(lin.MaxLimitSwitchPin, PinMode.Input);
+    }
+
+    [Fact]
+    public void Constructor_ShouldOpenRotaryAxisPins()
+    {
+        var rot = _config.RotaryAxisConfig;
+        _mockGpio.Received(1).OpenPin(rot.PulsePin, PinMode.Output);
+        _mockGpio.Received(1).OpenPin(rot.DirectionPin, PinMode.Output);
+    }
+
+    [Fact]
+    public void Constructor_ShouldRegisterLimitSwitchCallbacks()
+    {
+        var lin = _config.LinearAxisConfig;
+        _mockGpio.Received(1).RegisterCallbackForPinValueChangedEvent(
+            lin.MinLimitSwitchPin,
+            PinEventTypes.Falling | PinEventTypes.Rising,
+            Arg.Any<PinChangeEventHandler>());
+        _mockGpio.Received(1).RegisterCallbackForPinValueChangedEvent(
+            lin.MaxLimitSwitchPin,
+            PinEventTypes.Falling | PinEventTypes.Rising,
+            Arg.Any<PinChangeEventHandler>());
+    }
+
+    [Fact]
+    public void Constructor_ShouldOpenEnablePins_WhenConfigured()
+    {
+        var mockGpio = Substitute.For<IGpioController>();
+        mockGpio.Read(Arg.Any<int>()).Returns(PinValue.High);
+
+        var cfg = new SynchronizedDualAxisConfig
+        {
+            LinearAxisConfig = new LinearAxisConfig
+            {
+                PulsePin = 21, DirectionPin = 20, EnablePin = 19,
+                MinLimitSwitchPin = 24, MaxLimitSwitchPin = 23
+            },
+            RotaryAxisConfig = new RotaryAxisConfig
+            {
+                PulsePin = 16, DirectionPin = 12, EnablePin = 13
+            },
+            GearRatio = 1.0
+        };
+
+        using var c = new SynchronizedDualAxisController(mockGpio, cfg, _mockLogger);
+
+        mockGpio.Received(1).OpenPin(19, PinMode.Output);
+        mockGpio.Received(1).Write(19, PinValue.High); // Disabled by default
+        mockGpio.Received(1).OpenPin(13, PinMode.Output);
+        mockGpio.Received(1).Write(13, PinValue.High);
+    }
+
+    // -----------------------------------------------------------------------
+    // Initial property values
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void CurrentPositionInches_ShouldReturnZero_Initially()
+    {
+        Assert.Equal(0.0, _controller.CurrentPositionInches);
+    }
+
+    [Fact]
+    public void CurrentRotaryPositionDegrees_ShouldReturnZero_Initially()
+    {
+        Assert.Equal(0.0, _controller.CurrentRotaryPositionDegrees);
+    }
+
+    [Fact]
+    public void IsMinLimitSwitchTriggered_ShouldBeFalse_Initially()
+    {
+        Assert.False(_controller.IsMinLimitSwitchTriggered);
+    }
+
+    [Fact]
+    public void IsMaxLimitSwitchTriggered_ShouldBeFalse_Initially()
+    {
+        Assert.False(_controller.IsMaxLimitSwitchTriggered);
+    }
+
+    // -----------------------------------------------------------------------
+    // MoveInchesAsync
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task MoveInchesAsync_ShouldThrowArgumentException_WhenRpmIsZero()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(() => _controller.MoveInchesAsync(1.0, 0));
+    }
+
+    [Fact]
+    public async Task MoveInchesAsync_ShouldThrowArgumentException_WhenRpmIsNegative()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(() => _controller.MoveInchesAsync(1.0, -1));
+    }
+
+    [Fact]
+    public async Task MoveInchesAsync_ShouldSetLinearDirectionLow_WhenMovingPositive()
+    {
+        await _controller.MoveInchesAsync(0.1, 60);
+        _mockGpio.Received().Write(_config.LinearAxisConfig.DirectionPin, PinValue.Low);
+    }
+
+    [Fact]
+    public async Task MoveInchesAsync_ShouldSetLinearDirectionHigh_WhenMovingNegative()
+    {
+        await _controller.MoveInchesAsync(-0.1, 60);
+        _mockGpio.Received().Write(_config.LinearAxisConfig.DirectionPin, PinValue.High);
+    }
+
+    [Fact]
+    public async Task MoveInchesAsync_ShouldSetRotaryDirectionLow_WhenMovingPositive()
+    {
+        await _controller.MoveInchesAsync(0.1, 60);
+        _mockGpio.Received().Write(_config.RotaryAxisConfig.DirectionPin, PinValue.Low);
+    }
+
+    [Fact]
+    public async Task MoveInchesAsync_ShouldSetRotaryDirectionHigh_WhenMovingNegative()
+    {
+        await _controller.MoveInchesAsync(-0.1, 60);
+        _mockGpio.Received().Write(_config.RotaryAxisConfig.DirectionPin, PinValue.High);
+    }
+
+    [Fact]
+    public async Task MoveInchesAsync_ShouldGenerateLinearPulses()
+    {
+        await _controller.MoveInchesAsync(0.01, 60);
+        _mockGpio.Received().Write(_config.LinearAxisConfig.PulsePin, PinValue.High);
+        _mockGpio.Received().Write(_config.LinearAxisConfig.PulsePin, PinValue.Low);
+    }
+
+    [Fact]
+    public async Task MoveInchesAsync_ShouldUpdateLinearPosition()
+    {
+        var cfg = new SynchronizedDualAxisConfig
+        {
+            LinearAxisConfig = new LinearAxisConfig
+            {
+                PulsePin = 21, DirectionPin = 20, MinLimitSwitchPin = 24, MaxLimitSwitchPin = 23,
+                StepsPerRevolution = StepsPerRevolution.SPR_400,
+                LeadScrewThreadsPerInch = 1.0,
+                Acceleration = 50000.0
+            },
+            RotaryAxisConfig = new RotaryAxisConfig { PulsePin = 16, DirectionPin = 12 },
+            GearRatio = 1.0
+        };
+        var mockGpio = Substitute.For<IGpioController>();
+        mockGpio.Read(Arg.Any<int>()).Returns(PinValue.High);
+        using var c = new SynchronizedDualAxisController(mockGpio, cfg, _mockLogger);
+
+        await c.MoveInchesAsync(0.1, 60);
+
+        Assert.Equal(0.1, c.CurrentPositionInches, 2);
+    }
+
+    // -----------------------------------------------------------------------
+    // Rotary synchronization & DDA accuracy
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task MoveInchesAsync_RotaryPulseCount_ShouldMatchGearRatioScaling_OneToOne()
+    {
+        // GearRatio = 1.0, SPR equal → rotary pulses should equal linear pulses
+        var cfg = new SynchronizedDualAxisConfig
+        {
+            LinearAxisConfig = new LinearAxisConfig
+            {
+                PulsePin = 21, DirectionPin = 20, MinLimitSwitchPin = 24, MaxLimitSwitchPin = 23,
+                StepsPerRevolution = StepsPerRevolution.SPR_400,
+                LeadScrewThreadsPerInch = 1.0,
+                Acceleration = 50000.0
+            },
+            RotaryAxisConfig = new RotaryAxisConfig
+            {
+                PulsePin = 16, DirectionPin = 12,
+                StepsPerRevolution = StepsPerRevolution.SPR_400
+            },
+            GearRatio = 1.0
+        };
+
+        var mockGpio = Substitute.For<IGpioController>();
+        mockGpio.Read(Arg.Any<int>()).Returns(PinValue.High);
+        using var c = new SynchronizedDualAxisController(mockGpio, cfg, _mockLogger);
+
+        int totalLinearSteps = 400; // 1 inch at 1 TPI × 400 SPR
+        await c.MoveInchesAsync(1.0, 60);
+
+        // With 1:1 gear ratio and same SPR, rotary pulses == linear pulses
+        mockGpio.Received(totalLinearSteps).Write(cfg.LinearAxisConfig.PulsePin, PinValue.High);
+        mockGpio.Received(totalLinearSteps).Write(cfg.RotaryAxisConfig.PulsePin, PinValue.High);
+    }
+
+    [Fact]
+    public async Task MoveInchesAsync_RotaryPulseCount_ShouldScaleByGearRatio()
+    {
+        // GearRatio = 0.5 → rotary fires half as many pulses per linear step
+        var cfg = new SynchronizedDualAxisConfig
+        {
+            LinearAxisConfig = new LinearAxisConfig
+            {
+                PulsePin = 21, DirectionPin = 20, MinLimitSwitchPin = 24, MaxLimitSwitchPin = 23,
+                StepsPerRevolution = StepsPerRevolution.SPR_400,
+                LeadScrewThreadsPerInch = 1.0,
+                Acceleration = 50000.0
+            },
+            RotaryAxisConfig = new RotaryAxisConfig
+            {
+                PulsePin = 16, DirectionPin = 12,
+                StepsPerRevolution = StepsPerRevolution.SPR_400
+            },
+            GearRatio = 0.5
+        };
+
+        var mockGpio = Substitute.For<IGpioController>();
+        mockGpio.Read(Arg.Any<int>()).Returns(PinValue.High);
+        using var c = new SynchronizedDualAxisController(mockGpio, cfg, _mockLogger);
+
+        await c.MoveInchesAsync(1.0, 60); // 400 linear steps
+
+        // 0.5 × (400/400) × 400 linear steps = 200 rotary pulses
+        mockGpio.Received(400).Write(cfg.LinearAxisConfig.PulsePin, PinValue.High);
+        mockGpio.Received(200).Write(cfg.RotaryAxisConfig.PulsePin, PinValue.High);
+    }
+
+    [Fact]
+    public async Task MoveInchesAsync_RotaryPositionDegrees_ShouldBeNonZeroAfterMove()
+    {
+        var cfg = new SynchronizedDualAxisConfig
+        {
+            LinearAxisConfig = new LinearAxisConfig
+            {
+                PulsePin = 21, DirectionPin = 20, MinLimitSwitchPin = 24, MaxLimitSwitchPin = 23,
+                StepsPerRevolution = StepsPerRevolution.SPR_400,
+                LeadScrewThreadsPerInch = 1.0,
+                Acceleration = 50000.0
+            },
+            RotaryAxisConfig = new RotaryAxisConfig
+            {
+                PulsePin = 16, DirectionPin = 12,
+                StepsPerRevolution = StepsPerRevolution.SPR_400
+            },
+            GearRatio = 1.0
+        };
+
+        var mockGpio = Substitute.For<IGpioController>();
+        mockGpio.Read(Arg.Any<int>()).Returns(PinValue.High);
+        using var c = new SynchronizedDualAxisController(mockGpio, cfg, _mockLogger);
+
+        await c.MoveInchesAsync(1.0, 60);
+
+        // 1:1, 1 TPI, 400 SPR → 400 rotary steps = 360°
+        Assert.Equal(360.0, c.CurrentRotaryPositionDegrees, 1);
+    }
+
+    // -----------------------------------------------------------------------
+    // StopAsync
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task StopAsync_ShouldCompleteMotionGracefully()
+    {
+        var moveTask = _controller.MoveInchesAsync(10.0, 60);
+        await Task.Delay(50);
+        await _controller.StopAsync();
+        await Task.WhenAny(moveTask, Task.Delay(2000));
+        Assert.True(moveTask.IsCompleted);
+    }
+
+    [Fact]
+    public async Task StopAsync_ShouldAllowSubsequentMoves()
+    {
+        var moveTask = _controller.MoveInchesAsync(5.0, 60);
+        await Task.Delay(50);
+        await _controller.StopAsync();
+        await moveTask;
+
+        // Should not throw
+        await _controller.MoveInchesAsync(0.1, 60);
+    }
+
+    // -----------------------------------------------------------------------
+    // RunToLimitSwitchAsync
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task RunToLimitSwitchAsync_ShouldThrowArgumentException_WhenRpmIsZero()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _controller.RunToLimitSwitchAsync(LimitSwitch.Max, 0));
+    }
+
+    [Fact]
+    public async Task RunToLimitSwitchAsync_ShouldSetLinearDirectionLow_WhenMovingToMaxLimit()
+    {
+        var cts = new CancellationTokenSource(100);
+        try { await _controller.RunToLimitSwitchAsync(LimitSwitch.Max, 60, cts.Token); }
+        catch (OperationCanceledException) { }
+
+        _mockGpio.Received().Write(_config.LinearAxisConfig.DirectionPin, PinValue.Low);
+    }
+
+    [Fact]
+    public async Task RunToLimitSwitchAsync_ShouldSetLinearDirectionHigh_WhenMovingToMinLimit()
+    {
+        var cts = new CancellationTokenSource(100);
+        try { await _controller.RunToLimitSwitchAsync(LimitSwitch.Min, 60, cts.Token); }
+        catch (OperationCanceledException) { }
+
+        _mockGpio.Received().Write(_config.LinearAxisConfig.DirectionPin, PinValue.High);
+    }
+
+    // -----------------------------------------------------------------------
+    // ResetPositionAsync
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task ResetPositionAsync_ShouldSetLinearPositionToZero()
+    {
+        var cfg = new SynchronizedDualAxisConfig
+        {
+            LinearAxisConfig = new LinearAxisConfig
+            {
+                PulsePin = 21, DirectionPin = 20, MinLimitSwitchPin = 24, MaxLimitSwitchPin = 23,
+                StepsPerRevolution = StepsPerRevolution.SPR_400,
+                LeadScrewThreadsPerInch = 1.0,
+                Acceleration = 50000.0
+            },
+            RotaryAxisConfig = new RotaryAxisConfig { PulsePin = 16, DirectionPin = 12 },
+            GearRatio = 1.0
+        };
+        var mockGpio = Substitute.For<IGpioController>();
+        mockGpio.Read(Arg.Any<int>()).Returns(PinValue.High);
+        using var c = new SynchronizedDualAxisController(mockGpio, cfg, _mockLogger);
+
+        await c.MoveInchesAsync(0.5, 60);
+        Assert.NotEqual(0.0, c.CurrentPositionInches);
+
+        await c.ResetPositionAsync();
+        Assert.Equal(0.0, c.CurrentPositionInches);
+    }
+
+    // -----------------------------------------------------------------------
+    // Limit switches
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void IsMinLimitSwitchTriggered_ShouldBeTrueWhenPinIsLowOnInit()
+    {
+        var mockGpio = Substitute.For<IGpioController>();
+        mockGpio.Read(_config.LinearAxisConfig.MinLimitSwitchPin).Returns(PinValue.Low);
+        mockGpio.Read(_config.LinearAxisConfig.MaxLimitSwitchPin).Returns(PinValue.High);
+
+        using var c = new SynchronizedDualAxisController(mockGpio, _config, _mockLogger);
+        Assert.True(c.IsMinLimitSwitchTriggered);
+    }
+
+    // -----------------------------------------------------------------------
+    // Dispose
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Dispose_ShouldDisposeGpio()
+    {
+        var mockGpio = Substitute.For<IGpioController>();
+        mockGpio.Read(Arg.Any<int>()).Returns(PinValue.High);
+        var c = new SynchronizedDualAxisController(mockGpio, _config, _mockLogger);
+        c.Dispose();
+        mockGpio.Received(1).Dispose();
+    }
+
+    [Fact]
+    public void Dispose_ShouldBeIdempotent()
+    {
+        var mockGpio = Substitute.For<IGpioController>();
+        mockGpio.Read(Arg.Any<int>()).Returns(PinValue.High);
+        var c = new SynchronizedDualAxisController(mockGpio, _config, _mockLogger);
+        c.Dispose();
+        c.Dispose();
+        mockGpio.Received(1).Dispose();
+    }
+}

@@ -84,7 +84,7 @@ static void CreateMainWindow(Application app, IStepperMotorController motorContr
 {
     var window = ApplicationWindow.New(app);
     window.SetDecorated(true);
-    window.SetDefaultSize(800, 480);
+    window.SetDefaultSize(800, 440);
     window.SetResizable(false);
 
     var ui = new MotorControlUI(window, motorController, config);

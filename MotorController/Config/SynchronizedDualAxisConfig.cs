@@ -18,15 +18,10 @@ public class SynchronizedDualAxisConfig
     public RotaryAxisConfig RotaryAxisConfig { get; set; } = new RotaryAxisConfig();
 
     /// <summary>
-    /// Gets or sets the gear ratio between the rotary axis and the linear axis.
-    /// This represents the number of rotations of the rotary axis per inch of linear travel.
+    /// Gets or sets the ratio between the rotary axis and the linear axis.
+    /// This represents the number of rotations of the rotary axis per rotation of the linear axis.
     /// </summary>
-    /// <remarks>
-    /// For example, if the rotary axis should make 2 full rotations per inch of linear movement,
-    /// set this value to 2.0. The controller will automatically synchronize the rotary motor's
-    /// step timing to maintain this ratio throughout acceleration, constant speed, and deceleration phases.
-    /// </remarks>
-    public double GearRatio { get; set; } = 2.0;
+    public double GearRatio { get; set; } = 0.4;
 }
 
 

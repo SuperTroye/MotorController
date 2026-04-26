@@ -74,7 +74,7 @@ The UI application automatically selects:
 - `specs.md` - Detailed specification document (read this for requirements)
 - `IStepperMotorController.cs` - Public interface for motor controller (~75 lines with XML docs)
 - `StepperMotorController.cs` - Main controller with David Austin algorithm (~492 lines)
-- `ControllerConfig.cs` - Configuration settings class with XML documentation (~64 lines)
+- `LinearAxixConfig.cs` - Configuration settings class with XML documentation (~64 lines)
   - Includes `StepsPerRevolution` enum with values: 200, 400, 800, 1600, 3200, 6400, 12800
 - `LimitSwitch.cs` - Enum specifying limit switch direction (Min/Max) (~18 lines)
 - `GpioControllerWrapper.cs` - Contains:
