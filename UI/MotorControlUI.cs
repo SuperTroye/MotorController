@@ -8,7 +8,7 @@ namespace UI;
 public class MotorControlUI
 {
     private readonly ApplicationWindow _window;
-    private readonly IStepperMotorController _motorController;
+    private readonly ISynchronizedDualAxisController _motorController;
     private readonly LinearAxisConfig _config;
     private readonly Label _speedLabel;
     private readonly Label _positionLabel;
@@ -31,12 +31,12 @@ public class MotorControlUI
 
     public MotorControlUI(
         ApplicationWindow window,
-        IStepperMotorController motorController,
-        LinearAxisConfig config)
+        ISynchronizedDualAxisController motorController,
+        SynchronizedDualAxisConfig config)
     {
         _window = window;
         _motorController = motorController;
-        _config = config;
+        _config = config.LinearAxisConfig;
 
         // Subscribe to limit switch events
         _motorController.MinLimitSwitchTriggered += OnMinLimitSwitchChanged;
