@@ -304,7 +304,7 @@ public class SynchronizedDualAxisController : ISynchronizedDualAxisController
     {
         if (rpm <= 0)
         {
-            _logger.LogWarning("SetTargetSpeed called with invalid RPM value: {Rpm}. Ignoring.", rpm);
+            _logger.LogWarning("SetTargetRpm called with invalid RPM value: {Rpm}", rpm);
             return;
         }
 
@@ -478,13 +478,13 @@ public class SynchronizedDualAxisController : ISynchronizedDualAxisController
                         {
                             var remaining = maxSteps.Value - step;
                             decelerationSteps = newDecelSteps < remaining ? newDecelSteps : Math.Max(1, remaining / 2);
-                            _logger.LogInformation("Speed changed to {Rpm} RPM (step {Step}/{Total}, decel={Decel})",
+                            _logger.LogInformation("Speed changed to {Rpm} RPM (step {Step}/{Total}, decel steps: {Decel})",
                                 currentRpm, step, maxSteps.Value, decelerationSteps);
                         }
                         else
                         {
                             decelerationSteps = newDecelSteps;
-                            _logger.LogInformation("Speed changed to {Rpm} RPM (decel={Decel})", currentRpm, decelerationSteps);
+                            _logger.LogInformation("Speed changed to {Rpm} RPM (decel steps: {Decel})", currentRpm, decelerationSteps);
                         }
                     }
                 }

@@ -21,6 +21,8 @@ cd "$REPO_DIR"
 echo "Pulling latest changes from git..."
 git pull
 
+git checkout Troye/RotaryAxis
+
 # Restore dependencies
 echo "Restoring dependencies..."
 dotnet restore
