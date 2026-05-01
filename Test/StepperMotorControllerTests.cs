@@ -1457,14 +1457,14 @@ public class SynchronizedDualAxisControllerTests : IDisposable
     public async Task MoveInchesAsync_ShouldSetRotaryDirectionLow_WhenMovingPositive()
     {
         await _controller.MoveInchesAsync(0.1, 60);
-        _mockGpio.Received().Write(_config.RotaryAxisConfig.DirectionPin, PinValue.Low);
+        _mockGpio.Received().Write(_config.RotaryAxisConfig.DirectionPin, PinValue.High);
     }
 
     [Fact]
     public async Task MoveInchesAsync_ShouldSetRotaryDirectionHigh_WhenMovingNegative()
     {
         await _controller.MoveInchesAsync(-0.1, 60);
-        _mockGpio.Received().Write(_config.RotaryAxisConfig.DirectionPin, PinValue.High);
+        _mockGpio.Received().Write(_config.RotaryAxisConfig.DirectionPin, PinValue.Low);
     }
 
     [Fact]

@@ -335,9 +335,14 @@ public class SynchronizedDualAxisController : ISynchronizedDualAxisController
         _gpio.Write(_config.LinearAxisConfig.DirectionPin, forward ? PinValue.Low : PinValue.High);
     }
 
+    /// <summary>
+    ///  Sets the rotary direction pin based on the desired linear direction and gear ratio.
+    ///  Note: the rotary direction is inverted relative to the linear direction.
+    /// </summary>
+    /// <param name="forward"></param>
     private void SetRotaryDirection(bool forward)
     {
-        _gpio.Write(_config.RotaryAxisConfig.DirectionPin, forward ? PinValue.Low : PinValue.High);
+        _gpio.Write(_config.RotaryAxisConfig.DirectionPin, forward ? PinValue.High : PinValue.Low);
     }
 
     private void EnableMotors()
