@@ -51,7 +51,7 @@ public class Keypad : Box
             grid.Attach(button, col, row, 1, 1);
         }
 
-        // Bottom row: Backspace, 0, Confirm
+        // Bottom row: Backspace, 0, ., Confirm
         var backspaceButton = CreateControlButton("⌫");
         backspaceButton.OnClicked += (sender, args) => Backspace();
         backspaceButton.AddCssClass("backspace-button");
@@ -61,10 +61,14 @@ public class Keypad : Box
         zeroButton.OnClicked += (sender, args) => AppendDigit("0");
         grid.Attach(zeroButton, 1, 3, 1, 1);
 
+        var periodButton = CreateNumberButton(".");
+        periodButton.OnClicked += (sender, args) => AppendPeriod();
+        grid.Attach(periodButton, 2, 3, 1, 1);
+
         var confirmButton = CreateControlButton("✓");
         confirmButton.OnClicked += (sender, args) => OnCloseRequested();
         confirmButton.AddCssClass("confirm-button");
-        grid.Attach(confirmButton, 2, 3, 1, 1);
+        grid.Attach(confirmButton, 3, 3, 1, 1);
 
         Append(grid);
 
@@ -125,6 +129,16 @@ public class Keypad : Box
         }
 
         _entry.SetPosition(-1); // Move cursor to end
+    }
+
+    private void AppendPeriod()
+    {
+        var currentText = _entry.GetText() ?? string.Empty;
+        if (!currentText.Contains('.'))
+        {
+            _entry.SetText(currentText.Length == 0 ? "0." : currentText + ".");
+            _entry.SetPosition(-1);
+        }
     }
 
     private void Backspace()

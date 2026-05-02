@@ -23,10 +23,12 @@ public class MotorControlUI
     private readonly Button _decrementButton;
     private readonly DrawingArea _minLimitIndicator;
     private readonly DrawingArea _maxLimitIndicator;
+    private readonly Entry _gearRatioEntry;
+    private readonly SynchronizedDualAxisConfig _dualAxisConfig;
     private CancellationTokenSource? _moveCts;
     private const double MIN_RPM = 5;
     private const double MAX_RPM = 350;
-    private double _currentRpm = 100;
+    private double _currentRpm = 50;
 
     public MotorControlUI(
         ApplicationWindow window,
@@ -36,6 +38,7 @@ public class MotorControlUI
         _window = window;
         _motorController = motorController;
         _config = config.LinearAxisConfig;
+        _dualAxisConfig = config;
 
         // Subscribe to limit switch events
         _motorController.MinLimitSwitchTriggered += OnMinLimitSwitchChanged;
@@ -202,8 +205,30 @@ public class MotorControlUI
         positionInputBox.Append(positionInputLabel);
         positionInputBox.Append(_positionEntry);
 
+        // Gear ratio entry section
+        var gearRatioInputBox = Box.New(Orientation.Vertical, 5);
+        gearRatioInputBox.SetHalign(Align.Center);
+
+        var gearRatioInputLabel = Label.New("Gear Ratio:");
+        gearRatioInputLabel.SetHalign(Align.Start);
+
+        _gearRatioEntry = Entry.New();
+        _gearRatioEntry.SetText(_dualAxisConfig.GearRatio.ToString("G"));
+        _gearRatioEntry.SetSizeRequest(120, -1);
+        _gearRatioEntry.SetEditable(false);
+        _gearRatioEntry.SetCanFocus(true);
+
+        var gearRatioEntryClick = GestureClick.New();
+        gearRatioEntryClick.SetPropagationPhase(Gtk.PropagationPhase.Capture);
+        gearRatioEntryClick.OnPressed += (sender, args) => ShowKeypad(_gearRatioEntry, "Gear Ratio", 0.01, null, OnGearRatioChanged);
+        _gearRatioEntry.AddController(gearRatioEntryClick);
+
+        gearRatioInputBox.Append(gearRatioInputLabel);
+        gearRatioInputBox.Append(_gearRatioEntry);
+
         inputsBox.Append(speedInputBox);
         inputsBox.Append(positionInputBox);
+        inputsBox.Append(gearRatioInputBox);
         mainBox.Append(inputsBox);
 
         // Move and Stop buttons
@@ -412,7 +437,13 @@ public class MotorControlUI
         _maxLimitButton.SetSensitive(enabled);
     }
 
-    private void ShowKeypad(Entry targetEntry, string title, double? minValue, double? maxValue)
+    private void OnGearRatioChanged(string value)
+    {
+        if (double.TryParse(value, out var gearRatio))
+            _dualAxisConfig.GearRatio = gearRatio;
+    }
+
+    private void ShowKeypad(Entry targetEntry, string title, double? minValue, double? maxValue, Action<string>? onConfirmed = null)
     {
         var dialog = new Dialog();
         dialog.SetTitle(title);
@@ -450,6 +481,7 @@ public class MotorControlUI
                 }
 
                 targetEntry.SetText(inputValue);
+                onConfirmed?.Invoke(inputValue);
                 dialog.Close();
             }
             else if (string.IsNullOrWhiteSpace(inputValue))

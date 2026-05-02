@@ -93,7 +93,7 @@ static void CreateMainWindow(Application app, ISynchronizedDualAxisController mo
 {
     var window = ApplicationWindow.New(app);
     window.SetDecorated(true);
-    window.SetDefaultSize(800, 440);
+    window.SetDefaultSize(800, 460);
     window.SetResizable(false);
 
     var ui = new MotorControlUI(window, motorController, config);
