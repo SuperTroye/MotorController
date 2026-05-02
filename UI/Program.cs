@@ -22,9 +22,18 @@ builder.ConfigureServices((ctx, services) =>
         services.AddSingleton<IGpioController, FakeGpioController>();
 
     services.Configure<LinearAxisConfig>(ctx.Configuration.GetSection("LinearAxisConfig"));
+    services.Configure<RotaryAxisConfig>(ctx.Configuration.GetSection("RotaryAxisConfig"));
     services.AddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<LinearAxisConfig>>().Value);
+    services.AddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RotaryAxisConfig>>().Value);
 
-    services.AddSingleton<IStepperMotorController, StepperMotorController>();
+    services.AddSingleton(sp => new SynchronizedDualAxisConfig 
+    { 
+        LinearAxisConfig = sp.GetRequiredService<LinearAxisConfig>(), 
+        RotaryAxisConfig = sp.GetRequiredService<RotaryAxisConfig>(),
+        GearRatio = 0.4
+    });
+
+    services.AddSingleton<ISynchronizedDualAxisController, SynchronizedDualAxisController>();
 
 }).ConfigureLogging(logging =>
 {
@@ -42,8 +51,8 @@ builder.ConfigureServices((ctx, services) =>
 // ============================
 using var host = builder.Build();
 
-using var motorController = host.Services.GetRequiredService<IStepperMotorController>();
-var config = host.Services.GetRequiredService<LinearAxisConfig>();
+using var motorController = host.Services.GetRequiredService<ISynchronizedDualAxisController>();
+var config = host.Services.GetRequiredService<SynchronizedDualAxisConfig>();
 
 // ============================
 // Create and run application
@@ -80,11 +89,11 @@ static bool IsRaspberryPi()
 }
 
 // Create main window
-static void CreateMainWindow(Application app, IStepperMotorController motorController, LinearAxisConfig config)
+static void CreateMainWindow(Application app, ISynchronizedDualAxisController motorController, SynchronizedDualAxisConfig config)
 {
     var window = ApplicationWindow.New(app);
     window.SetDecorated(true);
-    window.SetDefaultSize(800, 480);
+    window.SetDefaultSize(800, 440);
     window.SetResizable(false);
 
     var ui = new MotorControlUI(window, motorController, config);

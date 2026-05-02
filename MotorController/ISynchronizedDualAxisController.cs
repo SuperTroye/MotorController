@@ -1,7 +1,16 @@
-﻿
 namespace MotorControllerApp;
 
-public interface IStepperMotorController : IDisposable
+/// <summary>
+/// Extends <see cref="IStepperMotorController"/> with rotary axis position feedback for a
+/// synchronized dual-axis controller that drives a linear axis and a rotary axis simultaneously.
+/// </summary>
+/// <remarks>
+/// The rotary axis follows the linear axis acceleration profile automatically through the
+/// synchronization mechanism. Its speed is derived by scaling the linear axis step delay by
+/// the configured gear ratio, with a DDA (Digital Differential Analyzer) accumulator ensuring
+/// zero long-term drift between the two axes.
+/// </remarks>
+public interface ISynchronizedDualAxisController : IDisposable
 {
     /// <summary>
     /// Asynchronously moves the device the specified distance in inches at the given speed in revolutions per minute
@@ -48,6 +57,11 @@ public interface IStepperMotorController : IDisposable
     double CurrentPositionInches { get; }
 
     /// <summary>
+    /// Gets the current angular position of the rotary axis in degrees.
+    /// </summary>
+    double CurrentRotaryPositionDegrees { get; }
+
+    /// <summary>
     /// Gets a value indicating whether the maximum limit switch is triggered.
     /// </summary>
     bool IsMaxLimitSwitchTriggered { get; }
@@ -64,7 +78,7 @@ public interface IStepperMotorController : IDisposable
     /// position or state, as detected by a limit switch. Subscribers can use this event to perform actions such as
     /// stopping movement or initiating safety procedures.</remarks>
     event EventHandler? MinLimitSwitchTriggered;
-    
+
     /// <summary>
     /// Occurs when the maximum limit switch is triggered.
     /// </summary>
@@ -72,4 +86,6 @@ public interface IStepperMotorController : IDisposable
     /// position or state, as detected by a limit switch. Subscribers can use this event to perform actions such as
     /// stopping movement or initiating safety procedures.</remarks>
     event EventHandler? MaxLimitSwitchTriggered;
+
+
 }
