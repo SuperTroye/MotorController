@@ -19,7 +19,6 @@ public class MotorControlUI
     private readonly Button _stopButton;
     private readonly Button _minLimitButton;
     private readonly Button _maxLimitButton;
-    private readonly Button _settingsButton;
     private readonly Button _incrementButton;
     private readonly Button _decrementButton;
     private readonly DrawingArea _minLimitIndicator;
@@ -224,20 +223,6 @@ public class MotorControlUI
         actionButtonBox.Append(_moveButton);
         actionButtonBox.Append(_stopButton);
         mainBox.Append(actionButtonBox);
-
-        // Settings and Power buttons
-        var bottomButtonBox = Box.New(Orientation.Horizontal, 10);
-        bottomButtonBox.SetHexpand(true);
-        bottomButtonBox.SetHalign(Align.Fill);
-        bottomButtonBox.SetMarginTop(20);
-
-        _settingsButton = Button.NewWithLabel("⚙ Settings");
-        _settingsButton.SetSizeRequest(120, 40);
-        _settingsButton.SetHalign(Align.Start);
-        _settingsButton.OnClicked += OnSettingsButtonClicked;
-
-        bottomButtonBox.Append(_settingsButton);
-        mainBox.Append(bottomButtonBox);
 
         _window.SetChild(mainBox);
 
@@ -506,12 +491,6 @@ public class MotorControlUI
 
         dialog.SetChild(contentBox);
         dialog.Show();
-    }
-
-    private void OnSettingsButtonClicked(Button sender, EventArgs args)
-    {
-        var settingsDialog = new SettingsDialog(_window, _config);
-        settingsDialog.Show();
     }
 }
 
