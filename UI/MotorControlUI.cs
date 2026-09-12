@@ -445,7 +445,7 @@ public class MotorControlUI
 
     private void ShowKeypad(Entry targetEntry, string title, double? minValue, double? maxValue, Action<string>? onConfirmed = null)
     {
-        var dialog = new Dialog();
+        var dialog = Dialog.New();
         dialog.SetTitle(title);
         dialog.SetTransientFor(_window);
         dialog.SetModal(true);
@@ -496,13 +496,13 @@ public class MotorControlUI
             }
         };
 
-        dialog.SetChild(keypad);
+        dialog.SetChild(keypad.Widget);
         dialog.Show();
     }
 
     private void ShowError(string message)
     {
-        var dialog = new Dialog();
+        var dialog = Dialog.New();
         dialog.SetTitle("Error");
         dialog.SetTransientFor(_window);
         dialog.SetModal(true);

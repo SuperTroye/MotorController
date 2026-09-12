@@ -2,21 +2,24 @@
 
 namespace Widgets;
 
-public class Keypad : Box
+public class Keypad
 {
     private readonly Entry _entry;
+    private readonly Box _root;
 
     public Entry Entry => _entry;
+    public Widget Widget => _root;
     public event EventHandler? CloseRequested;
 
     public Keypad()
     {
-        SetOrientation(Orientation.Vertical);
-        SetSpacing(10);
-        SetMarginStart(20);
-        SetMarginEnd(20);
-        SetMarginTop(20);
-        SetMarginBottom(20);
+        // Use an internal Box instead of inheriting from Box
+        _root = Box.New(Orientation.Vertical, 10);
+        _root.SetSpacing(10);
+        _root.SetMarginStart(20);
+        _root.SetMarginEnd(20);
+        _root.SetMarginTop(20);
+        _root.SetMarginBottom(20);
 
         // Create entry field
         _entry = Entry.New();
@@ -28,7 +31,7 @@ public class Keypad : Box
         // Style the entry
         _entry.AddCssClass("keypad-entry");
 
-        Append(_entry);
+        _root.Append(_entry);
 
         // Create grid for buttons
         var grid = Grid.New();
@@ -39,7 +42,6 @@ public class Keypad : Box
         grid.SetHalign(Align.Fill);
         grid.SetValign(Align.Fill);
 
-        // Add number buttons (1-9)
         for (int i = 1; i <= 9; i++)
         {
             int digit = i;
@@ -51,7 +53,6 @@ public class Keypad : Box
             grid.Attach(button, col, row, 1, 1);
         }
 
-        // Bottom row: Backspace, 0, ., Confirm
         var backspaceButton = CreateControlButton("⌫");
         backspaceButton.OnClicked += (sender, args) => Backspace();
         backspaceButton.AddCssClass("backspace-button");
@@ -70,9 +71,8 @@ public class Keypad : Box
         confirmButton.AddCssClass("confirm-button");
         grid.Attach(confirmButton, 3, 3, 1, 1);
 
-        Append(grid);
+        _root.Append(grid);
 
-        // Create close button
         var closeBox = Box.New(Orientation.Horizontal, 5);
         closeBox.SetHalign(Align.Center);
 
@@ -85,7 +85,7 @@ public class Keypad : Box
         closeButton.SetSizeRequest(200, 50);
 
         closeBox.Append(closeButton);
-        Append(closeBox);
+        _root.Append(closeBox);
     }
 
     private Button CreateNumberButton(string text)
@@ -118,17 +118,12 @@ public class Keypad : Box
     {
         var currentText = _entry.GetText() ?? string.Empty;
 
-        // Replace "0" with the first digit entered
         if (currentText == "0")
-        {
             _entry.SetText(digit);
-        }
         else
-        {
             _entry.SetText(currentText + digit);
-        }
 
-        _entry.SetPosition(-1); // Move cursor to end
+        _entry.SetPosition(-1);
     }
 
     private void AppendPeriod()
@@ -147,17 +142,11 @@ public class Keypad : Box
         if (currentText.Length > 0)
         {
             _entry.SetText(currentText.Substring(0, currentText.Length - 1));
-            _entry.SetPosition(-1); // Move cursor to end
+            _entry.SetPosition(-1);
         }
     }
 
-    public void Clear()
-    {
-        _entry.SetText(string.Empty);
-    }
+    public void Clear() => _entry.SetText(string.Empty);
 
-    private void OnCloseRequested()
-    {
-        CloseRequested?.Invoke(this, EventArgs.Empty);
-    }
+    private void OnCloseRequested() => CloseRequested?.Invoke(this, EventArgs.Empty);
 }

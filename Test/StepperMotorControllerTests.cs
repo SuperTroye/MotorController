@@ -145,7 +145,7 @@ public class StepperMotorControllerTests : IDisposable
             {
                 var position = _controller.CurrentPositionInches;
                 Assert.True(position >= 0);
-            }));
+            }, CancellationToken.None));
         }
 
         await Task.WhenAll(tasks);
@@ -196,7 +196,7 @@ public class StepperMotorControllerTests : IDisposable
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _controller.MoveInchesAsync(1.0, 0));
+            _controller.MoveInchesAsync(1.0, 0, CancellationToken.None));
     }
 
     [Fact]
@@ -204,14 +204,14 @@ public class StepperMotorControllerTests : IDisposable
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _controller.MoveInchesAsync(1.0, -10));
+            _controller.MoveInchesAsync(1.0, -10, CancellationToken.None));
     }
 
     [Fact]
     public async Task MoveInchesAsync_ShouldSetDirectionLow_WhenMovingPositive()
     {
         // Act
-        await _controller.MoveInchesAsync(0.1, 60);
+        await _controller.MoveInchesAsync(0.1, 60, CancellationToken.None);
 
         // Assert
         _mockGpio.Received().Write(_config.LinearAxisConfig.DirectionPin, PinValue.Low);
@@ -221,7 +221,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task MoveInchesAsync_ShouldSetDirectionHigh_WhenMovingNegative()
     {
         // Act
-        await _controller.MoveInchesAsync(-0.1, 60);
+        await _controller.MoveInchesAsync(-0.1, 60, CancellationToken.None);
 
         // Assert
         _mockGpio.Received().Write(_config.LinearAxisConfig.DirectionPin, PinValue.High);
@@ -251,7 +251,7 @@ public class StepperMotorControllerTests : IDisposable
         using var controller = new SynchronizedDualAxisController(mockGpio, configWithEnable, CreateMockLogger());
 
         // Act
-        await controller.MoveInchesAsync(0.1, 60);
+        await controller.MoveInchesAsync(0.1, 60, CancellationToken.None);
 
         // Assert
         mockGpio.Received().Write(16, PinValue.Low); // Enabled
@@ -262,7 +262,7 @@ public class StepperMotorControllerTests : IDisposable
     public async Task MoveInchesAsync_ShouldGeneratePulses()
     {
         // Act
-        await _controller.MoveInchesAsync(0.01, 60);
+        await _controller.MoveInchesAsync(0.01, 60, CancellationToken.None);
 
         // Assert - Should have generated some pulses
         _mockGpio.Received().Write(_config.LinearAxisConfig.PulsePin, PinValue.High);
@@ -291,7 +291,7 @@ public class StepperMotorControllerTests : IDisposable
         using var controller = new SynchronizedDualAxisController(mockGpio, shortConfig, CreateMockLogger());
 
         // Act
-        await controller.MoveInchesAsync(0.1, 60);
+        await controller.MoveInchesAsync(0.1, 60, CancellationToken.None);
 
         // Assert
         Assert.Equal(0.1, controller.CurrentPositionInches, 2);
@@ -306,7 +306,7 @@ public class StepperMotorControllerTests : IDisposable
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _controller.RunToLimitSwitchAsync(LimitSwitch.Max, 0));
+            _controller.RunToLimitSwitchAsync(LimitSwitch.Max, 0, CancellationToken.None));
     }
 
     [Fact]
@@ -314,7 +314,7 @@ public class StepperMotorControllerTests : IDisposable
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _controller.RunToLimitSwitchAsync(LimitSwitch.Max, -10));
+            _controller.RunToLimitSwitchAsync(LimitSwitch.Max, -10, CancellationToken.None));
     }
 
     [Fact]
@@ -365,14 +365,14 @@ public class StepperMotorControllerTests : IDisposable
     public async Task StopAsync_ShouldCancelOngoingMotion()
     {
         // Arrange
-        var moveTask = _controller.MoveInchesAsync(10.0, 60); // Long move
+        var moveTask = _controller.MoveInchesAsync(10.0, 60, CancellationToken.None); // Long move
 
         // Act
-        await Task.Delay(50); // Let motion start
+        await Task.Delay(50, CancellationToken.None); // Let motion start
         await _controller.StopAsync();
 
         // Assert - Move should complete or be cancelled
-        await Task.WhenAny(moveTask, Task.Delay(1000));
+        await Task.WhenAny(moveTask, Task.Delay(1000, CancellationToken.None));
         Assert.True(moveTask.IsCompleted);
     }
 
@@ -380,13 +380,13 @@ public class StepperMotorControllerTests : IDisposable
     public async Task StopAsync_ShouldAllowSubsequentMoves()
     {
         // Arrange
-        var moveTask = _controller.MoveInchesAsync(.1, 60);
-        await Task.Delay(50);
+        var moveTask = _controller.MoveInchesAsync(.1, 60, CancellationToken.None);
+        await Task.Delay(50, CancellationToken.None);
         await _controller.StopAsync();
         await moveTask;
 
         // Act & Assert - Should not throw
-        await _controller.MoveInchesAsync(0.1, 60);
+        await _controller.MoveInchesAsync(0.1, 60, CancellationToken.None);
     }
 
     [Fact]
@@ -421,10 +421,10 @@ public class StepperMotorControllerTests : IDisposable
         using var controller = new SynchronizedDualAxisController(mockGpio, testConfig, CreateMockLogger());
 
         // Act
-        var motionTask = controller.MoveInchesAsync(10.0, 100); // Long move at 100 RPM
+        var motionTask = controller.MoveInchesAsync(10.0, 100, CancellationToken.None); // Long move at 100 RPM
 
         // Wait for motion to reach constant speed phase (past acceleration)
-        await Task.Delay(200);
+        await Task.Delay(200, CancellationToken.None);
 
         // Record when stop was called
         stopCalledTimestamp = stopwatch.ElapsedTicks;
@@ -530,7 +530,7 @@ public class StepperMotorControllerTests : IDisposable
         minLimitCallback?.Invoke(null, eventArgs);
 
         // Act
-        await controller.RunToLimitSwitchAsync(LimitSwitch.Min, 60);
+        await controller.RunToLimitSwitchAsync(LimitSwitch.Min, 60, CancellationToken.None);
         await controller.ResetPositionAsync();
 
         // Assert
@@ -562,7 +562,7 @@ public class StepperMotorControllerTests : IDisposable
         mockGpio.Read(Arg.Any<int>()).Returns(PinValue.High);
         using var controller = new SynchronizedDualAxisController(mockGpio, shortConfig, CreateMockLogger());
 
-        await controller.MoveInchesAsync(0.5, 60);
+        await controller.MoveInchesAsync(0.5, 60, CancellationToken.None);
         Assert.NotEqual(0.0, controller.CurrentPositionInches);
 
         // Act
@@ -630,11 +630,11 @@ public class StepperMotorControllerTests : IDisposable
         using var controller = new SynchronizedDualAxisController(mockGpio, shortConfig, CreateMockLogger());
 
         // Act - Move forward
-        await controller.MoveInchesAsync(0.5, 60);
+        await controller.MoveInchesAsync(0.5, 60, CancellationToken.None);
         var pos1 = controller.CurrentPositionInches;
 
         // Move backward
-        await controller.MoveInchesAsync(-0.2, 60);
+        await controller.MoveInchesAsync(-0.2, 60, CancellationToken.None);
         var pos2 = controller.CurrentPositionInches;
 
         // Reset position
@@ -679,7 +679,7 @@ public class StepperMotorControllerTests : IDisposable
         int totalSteps = 100;
 
         // Act
-        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.LinearAxisConfig.StepsPerRevolution * testConfig.LinearAxisConfig.LeadScrewThreadsPerInch), rpm);
+        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.LinearAxisConfig.StepsPerRevolution * testConfig.LinearAxisConfig.LeadScrewThreadsPerInch), rpm, CancellationToken.None);
 
         // Assert - Verify we pulsed the correct total number of steps
         mockGpio.Received(totalSteps).Write(testConfig.LinearAxisConfig.PulsePin, PinValue.High);
@@ -715,7 +715,7 @@ public class StepperMotorControllerTests : IDisposable
         // = 0.676 * sqrt(0.0004) * 1,000,000 = 0.676 * 0.02 * 1,000,000 = 13,520 microseconds
 
         // Act - move a small distance to trigger acceleration
-        await controller.MoveInchesAsync(0.01, 60);
+        await controller.MoveInchesAsync(0.01, 60, CancellationToken.None);
 
         // Assert - Just verify the calculation is correct (we can't directly observe the delay)
         Assert.Equal(13520.0, expectedInitialDelay, 0.5);
@@ -781,7 +781,7 @@ public class StepperMotorControllerTests : IDisposable
         int expectedDecelSteps = totalSteps - expectedAccelSteps; // 5
 
         // Act
-        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.LinearAxisConfig.StepsPerRevolution * testConfig.LinearAxisConfig.LeadScrewThreadsPerInch), rpm);
+        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.LinearAxisConfig.StepsPerRevolution * testConfig.LinearAxisConfig.LeadScrewThreadsPerInch), rpm, CancellationToken.None);
 
         // Assert - Should still pulse correct number of times
         mockGpio.Received(totalSteps).Write(testConfig.LinearAxisConfig.PulsePin, PinValue.High);
@@ -817,7 +817,7 @@ public class StepperMotorControllerTests : IDisposable
         int totalSteps = 100; // Enough steps for full accel, constant speed, and decel
 
         // Act
-        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.LinearAxisConfig.StepsPerRevolution * testConfig.LinearAxisConfig.LeadScrewThreadsPerInch), rpm);
+        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.LinearAxisConfig.StepsPerRevolution * testConfig.LinearAxisConfig.LeadScrewThreadsPerInch), rpm, CancellationToken.None);
 
         // Assert - Verify target delay calculation
         Assert.Equal(2500.0, targetDelayMicroseconds, 0.1);
@@ -852,7 +852,7 @@ public class StepperMotorControllerTests : IDisposable
         int totalSteps = 100;
 
         // Act
-        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.LinearAxisConfig.StepsPerRevolution * testConfig.LinearAxisConfig.LeadScrewThreadsPerInch), rpm);
+        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.LinearAxisConfig.StepsPerRevolution * testConfig.LinearAxisConfig.LeadScrewThreadsPerInch), rpm, CancellationToken.None);
 
         // Assert - Verify symmetry
         Assert.Equal(accelSteps, decelSteps);
@@ -918,7 +918,7 @@ public class StepperMotorControllerTests : IDisposable
 
         // Act - move enough steps for full profile
         int totalSteps = Math.Max(expectedAccelSteps * 3, 50);
-        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.LinearAxisConfig.StepsPerRevolution * testConfig.LinearAxisConfig.LeadScrewThreadsPerInch), rpm);
+        await controller.MoveInchesAsync(totalSteps / ((int)testConfig.LinearAxisConfig.StepsPerRevolution * testConfig.LinearAxisConfig.LeadScrewThreadsPerInch), rpm, CancellationToken.None);
 
         // Assert - calculations should be consistent
         Assert.True(expectedAccelSteps > 0);
@@ -1017,10 +1017,10 @@ public class StepperMotorControllerTests : IDisposable
         using var controller = new SynchronizedDualAxisController(mockGpio, testConfig, CreateMockLogger());
 
         // Act - Start motion in a background task
-        var motionTask = Task.Run(async () => await controller.MoveInchesAsync(2.0, 60));
+        var motionTask = Task.Run(async () => await controller.MoveInchesAsync(2.0, 60, CancellationToken.None), CancellationToken.None);
 
         // Wait a bit for motion to start and reach constant speed
-        await Task.Delay(50);
+        await Task.Delay(50, CancellationToken.None);
 
         // Change speed during motion
         controller.SetTargetSpeed(120);
@@ -1069,8 +1069,8 @@ public class StepperMotorControllerTests : IDisposable
         int expectedInitialDecelSteps = (int)((initialMaxStepsPerSec * initialMaxStepsPerSec) / (2.0 * testConfig.LinearAxisConfig.Acceleration));
         int expectedNewDecelSteps = (int)((newMaxStepsPerSec * newMaxStepsPerSec) / (2.0 * testConfig.LinearAxisConfig.Acceleration));
         // Act - Start motion and change speed
-        var motionTask = Task.Run(async () => await controller.MoveInchesAsync(2.0, initialRpm));
-        await Task.Delay(50);
+        var motionTask = Task.Run(async () => await controller.MoveInchesAsync(2.0, initialRpm, CancellationToken.None), CancellationToken.None);
+        await Task.Delay(50, CancellationToken.None);
         controller.SetTargetSpeed(newRpm);
         await motionTask;
 
@@ -1107,7 +1107,7 @@ public class StepperMotorControllerTests : IDisposable
         using var controller = new SynchronizedDualAxisController(mockGpio, testConfig, mockLogger);
 
         // Act - Start very short motion and immediately try to change speed
-        var motionTask = Task.Run(async () => await controller.MoveInchesAsync(0.05, 60));
+        var motionTask = Task.Run(async () => await controller.MoveInchesAsync(0.05, 60, CancellationToken.None), CancellationToken.None);
         controller.SetTargetSpeed(120); // Try to change during acceleration
         await motionTask;
 
@@ -1147,16 +1147,16 @@ public class StepperMotorControllerTests : IDisposable
         using var controller = new SynchronizedDualAxisController(mockGpio, _config, mockLogger);
 
         // Act - Start motion to limit switch
-        var motionTask = Task.Run(async () => await controller.RunToLimitSwitchAsync(LimitSwitch.Min, 60));
+        var motionTask = Task.Run(async () => await controller.RunToLimitSwitchAsync(LimitSwitch.Min, 60, CancellationToken.None), CancellationToken.None);
 
         // Wait for motion to start
-        await Task.Delay(50);
+        await Task.Delay(50, CancellationToken.None);
 
         // Change speed during motion
         controller.SetTargetSpeed(100);
 
         // Trigger limit switch after speed change
-        await Task.Delay(50);
+        await Task.Delay(50, CancellationToken.None);
         var eventArgs = new PinValueChangedEventArgs(PinEventTypes.Falling, _config.LinearAxisConfig.MinLimitSwitchPin);
         minLimitCallback?.Invoke(null, eventArgs);
 
@@ -1193,13 +1193,13 @@ public class StepperMotorControllerTests : IDisposable
         using var controller = new SynchronizedDualAxisController(mockGpio, testConfig, CreateMockLogger());
 
         // Act - Start motion and rapidly change speed from multiple threads
-        var motionTask = Task.Run(async () => await controller.MoveInchesAsync(3.0, 60));
+        var motionTask = Task.Run(async () => await controller.MoveInchesAsync(3.0, 60, CancellationToken.None), CancellationToken.None);
 
         var speedChangeTasks = new List<Task>();
         for (int i = 0; i < 10; i++)
         {
             var rpm = 50 + (i * 10);
-            speedChangeTasks.Add(Task.Run(() => controller.SetTargetSpeed(rpm)));
+            speedChangeTasks.Add(Task.Run(() => controller.SetTargetSpeed(rpm), CancellationToken.None));
         }
 
         await Task.WhenAll(speedChangeTasks);
@@ -1232,15 +1232,15 @@ public class StepperMotorControllerTests : IDisposable
         using var controller = new SynchronizedDualAxisController(mockGpio, testConfig, mockLogger);
 
         // Act - Start motion and change speed multiple times
-        var motionTask = Task.Run(async () => await controller.MoveInchesAsync(3.0, 60));
+        var motionTask = Task.Run(async () => await controller.MoveInchesAsync(3.0, 60, CancellationToken.None), CancellationToken.None);
 
-        await Task.Delay(20);
+        await Task.Delay(20, CancellationToken.None);
         controller.SetTargetSpeed(80);
 
-        await Task.Delay(30);
+        await Task.Delay(30, CancellationToken.None);
         controller.SetTargetSpeed(120);
 
-        await Task.Delay(30);
+        await Task.Delay(30, CancellationToken.None);
         controller.SetTargetSpeed(100);
 
         await motionTask;
@@ -1430,47 +1430,47 @@ public class SynchronizedDualAxisControllerTests : IDisposable
     [Fact]
     public async Task MoveInchesAsync_ShouldThrowArgumentException_WhenRpmIsZero()
     {
-        await Assert.ThrowsAsync<ArgumentException>(() => _controller.MoveInchesAsync(1.0, 0));
+        await Assert.ThrowsAsync<ArgumentException>(() => _controller.MoveInchesAsync(1.0, 0, CancellationToken.None));
     }
 
     [Fact]
     public async Task MoveInchesAsync_ShouldThrowArgumentException_WhenRpmIsNegative()
     {
-        await Assert.ThrowsAsync<ArgumentException>(() => _controller.MoveInchesAsync(1.0, -1));
+        await Assert.ThrowsAsync<ArgumentException>(() => _controller.MoveInchesAsync(1.0, -1, CancellationToken.None));
     }
 
     [Fact]
     public async Task MoveInchesAsync_ShouldSetLinearDirectionLow_WhenMovingPositive()
     {
-        await _controller.MoveInchesAsync(0.1, 60);
+        await _controller.MoveInchesAsync(0.1, 60, CancellationToken.None);
         _mockGpio.Received().Write(_config.LinearAxisConfig.DirectionPin, PinValue.Low);
     }
 
     [Fact]
     public async Task MoveInchesAsync_ShouldSetLinearDirectionHigh_WhenMovingNegative()
     {
-        await _controller.MoveInchesAsync(-0.1, 60);
+        await _controller.MoveInchesAsync(-0.1, 60, CancellationToken.None);
         _mockGpio.Received().Write(_config.LinearAxisConfig.DirectionPin, PinValue.High);
     }
 
     [Fact]
     public async Task MoveInchesAsync_ShouldSetRotaryDirectionLow_WhenMovingPositive()
     {
-        await _controller.MoveInchesAsync(0.1, 60);
+        await _controller.MoveInchesAsync(0.1, 60, CancellationToken.None);
         _mockGpio.Received().Write(_config.RotaryAxisConfig.DirectionPin, PinValue.High);
     }
 
     [Fact]
     public async Task MoveInchesAsync_ShouldSetRotaryDirectionHigh_WhenMovingNegative()
     {
-        await _controller.MoveInchesAsync(-0.1, 60);
+        await _controller.MoveInchesAsync(-0.1, 60, CancellationToken.None);
         _mockGpio.Received().Write(_config.RotaryAxisConfig.DirectionPin, PinValue.Low);
     }
 
     [Fact]
     public async Task MoveInchesAsync_ShouldGenerateLinearPulses()
     {
-        await _controller.MoveInchesAsync(0.01, 60);
+        await _controller.MoveInchesAsync(0.01, 60, CancellationToken.None);
         _mockGpio.Received().Write(_config.LinearAxisConfig.PulsePin, PinValue.High);
         _mockGpio.Received().Write(_config.LinearAxisConfig.PulsePin, PinValue.Low);
     }
@@ -1497,7 +1497,7 @@ public class SynchronizedDualAxisControllerTests : IDisposable
         mockGpio.Read(Arg.Any<int>()).Returns(PinValue.High);
         using var c = new SynchronizedDualAxisController(mockGpio, cfg, _mockLogger);
 
-        await c.MoveInchesAsync(0.1, 60);
+        await c.MoveInchesAsync(0.1, 60, CancellationToken.None);
 
         Assert.Equal(0.1, c.CurrentPositionInches, 2);
     }
@@ -1536,7 +1536,7 @@ public class SynchronizedDualAxisControllerTests : IDisposable
         using var c = new SynchronizedDualAxisController(mockGpio, cfg, _mockLogger);
 
         int totalLinearSteps = 400; // 1 inch at 1 TPI × 400 SPR
-        await c.MoveInchesAsync(1.0, 60);
+        await c.MoveInchesAsync(1.0, 60, CancellationToken.None);
 
         // With 1:1 gear ratio and same SPR, rotary pulses == linear pulses
         mockGpio.Received(totalLinearSteps).Write(cfg.LinearAxisConfig.PulsePin, PinValue.High);
@@ -1572,7 +1572,7 @@ public class SynchronizedDualAxisControllerTests : IDisposable
         mockGpio.Read(Arg.Any<int>()).Returns(PinValue.High);
         using var c = new SynchronizedDualAxisController(mockGpio, cfg, _mockLogger);
 
-        await c.MoveInchesAsync(1.0, 60); // 400 linear steps
+        await c.MoveInchesAsync(1.0, 60, CancellationToken.None); // 400 linear steps
 
         // 0.5 × (400/400) × 400 linear steps = 200 rotary pulses
         mockGpio.Received(400).Write(cfg.LinearAxisConfig.PulsePin, PinValue.High);
@@ -1607,7 +1607,7 @@ public class SynchronizedDualAxisControllerTests : IDisposable
         mockGpio.Read(Arg.Any<int>()).Returns(PinValue.High);
         using var c = new SynchronizedDualAxisController(mockGpio, cfg, _mockLogger);
 
-        await c.MoveInchesAsync(1.0, 60);
+        await c.MoveInchesAsync(1.0, 60, CancellationToken.None);
 
         // 1:1, 1 TPI, 400 SPR → 400 rotary steps = 360°
         Assert.Equal(360.0, c.CurrentRotaryPositionDegrees, 1);
@@ -1620,23 +1620,23 @@ public class SynchronizedDualAxisControllerTests : IDisposable
     [Fact]
     public async Task StopAsync_ShouldCompleteMotionGracefully()
     {
-        var moveTask = _controller.MoveInchesAsync(10.0, 60);
-        await Task.Delay(50);
+        var moveTask = _controller.MoveInchesAsync(10.0, 60, CancellationToken.None);
+        await Task.Delay(50, CancellationToken.None);
         await _controller.StopAsync();
-        await Task.WhenAny(moveTask, Task.Delay(2000));
+        await Task.WhenAny(moveTask, Task.Delay(2000, CancellationToken.None));
         Assert.True(moveTask.IsCompleted);
     }
 
     [Fact]
     public async Task StopAsync_ShouldAllowSubsequentMoves()
     {
-        var moveTask = _controller.MoveInchesAsync(5.0, 60);
-        await Task.Delay(50);
+        var moveTask = _controller.MoveInchesAsync(5.0, 60, CancellationToken.None);
+        await Task.Delay(50, CancellationToken.None);
         await _controller.StopAsync();
         await moveTask;
 
         // Should not throw
-        await _controller.MoveInchesAsync(0.1, 60);
+        await _controller.MoveInchesAsync(0.1, 60, CancellationToken.None);
     }
 
     // -----------------------------------------------------------------------
@@ -1647,7 +1647,7 @@ public class SynchronizedDualAxisControllerTests : IDisposable
     public async Task RunToLimitSwitchAsync_ShouldThrowArgumentException_WhenRpmIsZero()
     {
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _controller.RunToLimitSwitchAsync(LimitSwitch.Max, 0));
+            _controller.RunToLimitSwitchAsync(LimitSwitch.Max, 0, CancellationToken.None));
     }
 
     [Fact]
@@ -1696,7 +1696,7 @@ public class SynchronizedDualAxisControllerTests : IDisposable
         mockGpio.Read(Arg.Any<int>()).Returns(PinValue.High);
         using var c = new SynchronizedDualAxisController(mockGpio, cfg, _mockLogger);
 
-        await c.MoveInchesAsync(0.5, 60);
+        await c.MoveInchesAsync(0.5, 60, CancellationToken.None);
         Assert.NotEqual(0.0, c.CurrentPositionInches);
 
         await c.ResetPositionAsync();
